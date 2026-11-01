@@ -1,0 +1,27 @@
+# zuroar
+
+The goal of zuroar is to …
+
+## Installation
+
+You can install the development version of zuroar from
+[GitHub](https://github.com/) with:
+
+``` r
+
+# install.packages("pak")
+pak::pak("pedrobtz/zuroar")
+```
+
+## Example
+
+This is a basic example which shows you how to solve a common problem:
+
+``` r
+
+library(zuroar)
+## basic example code
+```
+
+# 
+
