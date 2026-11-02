@@ -1,7 +1,7 @@
 ^LICENSE\.md$
 ^\.agents$
 ^\.superpowers$
-^vignettes/articles$
+^vignettes$
 ^CLAUDE\.md$
 ^\.claude$
 ^AGENTS\.md$

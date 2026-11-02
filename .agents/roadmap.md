@@ -322,15 +322,15 @@ with every claim measured.
 - An article with benchmarks against base R and `bit` on union,
   intersection, membership and memory over dense, sparse and run-heavy sets.
 - The pkgdown reference index.
-- The "Get started" vignette, `vignettes/zuroar.Rmd`, written ahead of
-  the code with `eval = FALSE` and the design's expected output as `#>`
-  comments: turn evaluation on, delete those comments, and drop the
-  "In development" note.
+- The Get started article, `vignettes/zuroar.Rmd`: by now the feature
+  stages have switched on each chunk they implemented (`pkg-implement`);
+  remove the `eval = FALSE` setup default if a stage has not.
 
 **Exit criteria.**
 
 - `README.md` is knitted from `README.Rmd` and its examples run.
-- `vignettes/zuroar.Rmd` runs every chunk, with no `eval = FALSE` left.
+- `vignettes/zuroar.Rmd` runs every chunk, with no `eval = FALSE` left,
+  and the site builds.
 - The article builds on the pkgdown workflow; no speed-up is stated
   without a measurement.
 - `R CMD check` passes on the quick profile.
