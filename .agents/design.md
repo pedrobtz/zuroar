@@ -4,6 +4,11 @@ Adopted from [RFC 0061](https://github.com/pedrobtz/packages/blob/main/rfcs/star
 on 2026-11-02. From here on this file is authoritative; the RFC is
 history.
 
+Amended 2026-11-02 after a review of pyroaring 1.2.0: a bitmap behaves as
+a sorted vector (§6.6, D11); shifting, next and previous values, range
+editing, strict subset, disjointness and `mirai` support join the API
+(§5, §5.1); Q1 and Q3 are settled (§12).
+
 - **Status:** Proposed. Merging this file adopts the design as the starting
   point for the package's own `.agents/design.md`; each decision in section
   10 stays the maintainer's until the package repository records it. A
@@ -13,9 +18,10 @@ history.
 - **Date:** 2026-11-01.
 - **Packages:** `zuroar` (not yet created; crandb returns `not_found` and
   there is no `pedrobtz/zuroar` repository, both checked on 2026-11-01).
-  No `Imports`. No `LinkingTo`. `Suggests: testthat`. Vendors the
-  CRoaring 5.4.0 amalgamation, `roaring.c` and `roaring.h`, under the MIT
-  side of its Apache-2.0/MIT dual licence. MIT for `zuroar`'s own code.
+  No `Imports`. No `LinkingTo`. `Suggests: testthat, mirai` (`mirai`
+  since the 2026-11-02 amendment). Vendors the CRoaring 5.4.0
+  amalgamation, `roaring.c` and `roaring.h`, under the MIT side of its
+  Apache-2.0/MIT dual licence. MIT for `zuroar`'s own code.
 - **Source:** the request of 2026-11-01 for five new RFCs, which ranked
   this one smallest at eight stages; RFC 0037 §14 (CRoaring bitsets as
   later `zutable` work, the reason `additional-candidates.md` omits
@@ -34,6 +40,10 @@ format, which the Java, Go, Rust, Python and C implementations share.
 
 > **CRoaring's sets as R values: no algorithm of our own, exact integers,
 > and a portable byte format.**
+
+To R code a bitmap looks like a sorted vector without duplicates:
+`length()`, `x[i]`, `head()` and `c()` work as they would on
+`sort(unique(v))`, while the values stay compressed (§6.6).
 
 It is not a general set package (unsigned integers only), not a bit
 vector (no fixed length, no universe, no positional `[<-`), not an
@@ -84,12 +94,15 @@ that waiting for a consumer saves little.
 
 - A 32-bit class, `zuroar`, from integer or double vectors, inclusive
   ranges or the portable format; membership, cardinality, extremes,
-  range counts, rank, select and bounded extraction.
+  range counts, rank, select, next and previous value, bounded
+  extraction, and adding or removing values and ranges.
+- Sorted-vector behaviour: positional `[`, `[[`, `head()`, `tail()`,
+  `c()`, `sort()`, `unique()`, and shifting with `+` and `-` (§6.6).
 - Union, intersection, difference, symmetric difference and in-range
   complement, pairwise and many-way; cardinality-only variants, Jaccard,
-  equality and subset.
+  equality, subset, strict subset, disjointness and overlap.
 - Portable serialisation, read through CRoaring's bounded deserialiser
-  and structural validator.
+  and structural validator, and a `mirai` serialisation hook.
 - A 64-bit class, `zuroar64`, on CRoaring's `roaring64` maps.
 - `zuroar_info()`: CRoaring version, compiled SIMD paths and run-time
   instruction sets.
@@ -147,34 +160,51 @@ the same `roaring_bitmap_*` names in one session.
 A bitmap is an external pointer to a `roaring_bitmap_t` (or
 `roaring64_bitmap_t`) with a finaliser and class `zuroar` (or
 `zuroar64`). Every operation returns a new pointer and none modifies its
-argument (D4). Copy-on-write is enabled on every bitmap through
+argument (D4). Copy-on-write is enabled on every 32-bit bitmap through
 `roaring_bitmap_set_copy_on_write()`, so `roar_add()` on a large bitmap
-shares the containers it does not touch. A bitmap back from `readRDS()`
-or a `mirai` worker has a null pointer; every entry point detects it and
-the error names `roar_serialize()` (D5).
+shares the containers it does not touch. CRoaring 5.4.0's `roaring64`
+has no copy-on-write, so every change to a `zuroar64` copies the whole
+bitmap (D16). A bitmap back from `readRDS()`
+or a `mirai` worker without the hook of §6.4 has a null pointer; every
+entry point detects it and the error names `roar_serialize()` (D5).
 
 ## 5. Public R API (v0.1.0 shape)
 
 ```r
 # building
-x <- roar(c(1L, 5L, 9L, 100000L))
+x <- roar(c(1L, 5L, 9L, 100000L))        # optimize = TRUE by default
 y <- roar_range(1, 1e6)                  # inclusive, as seq()
 z <- roar64(c("0", "18446744073709551615"))
 x <- roar_add(x, 7L); x <- roar_remove(x, 5L)
+y <- roar_add(y, from = 2e6, to = 3e6)   # add or remove an inclusive range
+y <- roar_remove(y, from = 10, to = 19)
+
+# a sorted vector without duplicates (section 6.6)
+length(x)                                # 4: the cardinality
+x[2:3]                                   # bitmap {7, 9}: positions, from 1
+x[-1]                                    # bitmap without its smallest value
+x[[2]]                                   # 7: one plain number
+head(y, 3); tail(y, 3)                   # bitmaps
+c(x, roar(42L))                          # union
+x + 10; x - 1                            # shifted bitmaps
+6 %in% x                                 # correct, but materialises x
 
 # queries
-length(x); min(x); max(x); range(x)     # length() is the cardinality
-roar_contains(x, c(5L, 6L))              # FALSE FALSE
-roar_count(y, from = 10, to = 20)        # 11
+min(x); max(x); range(x)
+roar_contains(x, c(5L, 6L))              # FALSE FALSE: the fast %in%
+roar_contains_range(y, from = 1, to = 9) # TRUE: every value present
+roar_count(y, from = 10, to = 20)        # 1: values in the range
 roar_rank(x, 9L)                         # 3: values <= 9
-roar_select(x, 2L)                       # 7: the second smallest
+roar_select(x, c(1, 2))                  # 1 7: vectorised x[[k]]
+roar_next(x, 8L); roar_prev(x, 8L)       # 9 and 7; NA when none
 
 # algebra
-x | y; x & y; x == y; x <= y
+x | y; x & y; x == y; x <= y; x < y      # union, intersection, (strict) subset
 roar_xor(x, y); roar_andnot(y, x); roar_flip(x, from = 0, to = 9)
 roar_union(x, y, w); roar_intersect(x, y, w)
 roar_cardinality(x, y, op = "and")       # no bitmap materialised
-roar_jaccard(x, y)
+roar_jaccard(x, y); roar_disjoint(x, y); roar_intersects(x, y)
+roar_shift(x, by = -5, drop = TRUE)      # drops values that leave the domain
 
 # back to R, and bytes
 as.integer(x); as.double(y)
@@ -182,10 +212,52 @@ roar_values(y, from = 1, n = 1000)       # bounded extraction
 roar_optimize(y); roar_stats(y)          # run containers; kinds, bytes
 b <- roar_serialize(x)                   # portable format, raw vector
 x2 <- roar_unserialize(b); roar_size(x); zuroar_info()
+z2 <- roar64_unserialize(roar_serialize(z))  # 64-bit bytes need their own reader
+roar64_length(z)                         # exact count as decimal text
+cfg <- roar_serial_config()              # for mirai::daemons(serial = cfg)
 ```
 
-`print()` shows the class, cardinality, range and first values. `c()`
-(concatenation or union?), `[` and `%in%` are not defined.
+`print()` and `format()` show the class, cardinality, range and first
+values. `[<-`, `rev()` and `!` are errors (§6.3, §6.6).
+
+### 5.1 Against pyroaring
+
+`pyroaring` 1.2.0 (`Ezibenroc/PyRoaringBitMap`, CRoaring 5.2.2) is the
+reference wrapper of the same library. Every feature it offers either
+has an R form here or is left out for a stated reason.
+
+<!-- markdownlint-disable MD013 -->
+| pyroaring | zuroar |
+| --- | --- |
+| `BitMap(values, optimize=True)`, `BitMap(range(a, b))` | `roar(values, optimize = TRUE)`, `roar_range(from, to)` |
+| `BitMap64` | `zuroar64` through `roar64()` |
+| `BitMap` and `FrozenBitMap` | one class; every R value is immutable (D4) |
+| `add`, `update`, `discard`, `remove`, `add_checked` | `roar_add()`, `roar_remove()`, returning a new bitmap |
+| `add_range`, `remove_range` (half-open) | `roar_add(from =, to =)`, `roar_remove(from =, to =)` (inclusive) |
+| `clear`, `pop`, `overwrite`, `*_update`, `flip_inplace` | none: they only make sense in place |
+| `v in bm` | `roar_contains(x, v)`; `v %in% x` also works, slowly |
+| `contains_range`, `range_cardinality` | `roar_contains_range()`, `roar_count()` |
+| `len(bm)`, `bool(bm)` | `length(x)`, `length(x) > 0` |
+| `min`, `max` | `min()`, `max()`, `range()` |
+| `rank`, `bm[i]` (select from 0) | `roar_rank()`, `x[[i]]` and `roar_select()` (from 1) |
+| `bm[i]` with negative `i` (from the end) | `tail(x, 1)`; a negative `x[-i]` drops, as in R |
+| `bm[a:b:step]` | `x[i]` for any positions; `head()`, `tail()` |
+| `next_set_bit`, `iter_equal_or_larger` | `roar_next()`, `roar_values(from =)`; `roar_prev()` added |
+| `\|`, `&`, `-`, `^` and the named methods | `\|`, `&`, `roar_andnot()`, `roar_xor()`, `roar_union()`, `roar_intersect()` |
+| `<`, `<=`, `==`, `!=`, `>=`, `>` | the same operators |
+| `isdisjoint`, `intersect` (bool) | `roar_disjoint()`, `roar_intersects()` |
+| `*_cardinality`, `jaccard_index` | `roar_cardinality(op =)`, `roar_jaccard()` |
+| `flip(start, end)` | `roar_flip(from, to)` |
+| `shift(offset)` (silently drops) | `x + k`, `roar_shift(by, drop = FALSE)` |
+| `run_optimize`, `shrink_to_fit` | `roar_optimize()`, which does both |
+| `get_statistics`, `__sizeof__` | `roar_stats()`, `roar_size()` |
+| `to_array`, `__iter__` | `as.integer()`, `as.double()`; chunked iteration is later (§2) |
+| `serialize`, `deserialize` (safe and validated) | `roar_serialize()`, `roar_unserialize()`, `roar64_unserialize()` (D8, D15) |
+| pickling | `roar_serial_config()` for `mirai`; `saveRDS()` needs `roar_serialize()` (D5) |
+| `copy`, `copy_on_write=` | not needed: copy-on-write is always on (§4) |
+| `raw_pointer` | none: no C API (D7) |
+| `__hash__` | none: R has no hashing of values |
+<!-- markdownlint-enable MD013 -->
 
 ## 6. Semantics
 
@@ -205,6 +277,15 @@ whole doubles below 2^53. Output is decimal text, or double on request
 when every value is below 2^53. Mixing `zuroar` and `zuroar64` in one
 operation is an error; `roar64(x)` promotes explicitly.
 
+Counts are doubles: `length()`, `roar_count()`, `roar_rank()`,
+`roar_cardinality()` and `match()` positions. A 32-bit count is at most
+2^32 and always exact. A `zuroar64` count above 2^53 is a
+`zuroar_error_value` rather than an inexact double (D2, D14);
+`roar64_length(x)` returns the exact cardinality as decimal text for
+every bitmap. `roaring64_bitmap_get_cardinality()` returns a `uint64_t`,
+so a bitmap holding all 2^64 values reports 0; the bindings read a zero
+cardinality on a non-empty bitmap as 2^64.
+
 ### 6.2 Ranges, rank and select
 
 R conventions at the boundary (D6). Ranges are inclusive at both ends,
@@ -217,16 +298,31 @@ property test.
 
 ### 6.3 Operators
 
-`|`, `&`, `==`, `!=`, `<=` and `>=` are `Ops` methods: union,
-intersection, equality and subset. `!` is undefined for want of a
-universe; `xor()` is not generic in base R, so `roar_xor()` is the only
-spelling; `-` is not overloaded, and `roar_andnot()` names difference.
-`min`, `max` and `range` are `Summary` methods. Other operators error.
+Between two bitmaps, `|`, `&`, `==`, `!=`, `<=`, `<`, `>=` and `>` are
+`Ops` methods: union, intersection, equality, subset and strict subset,
+each returning a bitmap or a single logical. `!` is undefined for want
+of a universe; `xor()` is not generic in base R and `^` means power, so
+`roar_xor()` is the only spelling; `-` between two bitmaps is an error,
+and `roar_andnot()` names difference.
+
+Between a bitmap and a whole number `k`, `x + k`, `k + x` and `x - k` are
+`roar_shift(x, by = ±k)`, through `roaring_bitmap_add_offset()`. A value
+that would leave the domain is a `zuroar_error_value` (D2), unless
+`roar_shift(drop = TRUE)` asks for pyroaring's silent drop. Comparing a
+bitmap with a number (`x > 5`) is an error whose message suggests
+`x & roar_range()`, because an elementwise logical vector would
+materialise the set.
+
+`min`, `max` and `range` are `Summary` methods; an empty bitmap is a
+`zuroar_error_value`, not R's `Inf` with a warning. `sum` and the other
+`Summary` members are errors: a sum can exceed 2^53 and lose exactness.
+Every other operator is an error.
 
 ### 6.4 Serialisation
 
 `roar_serialize()` writes the portable format through
 `roaring_bitmap_portable_serialize()` or its `roaring64` equivalent,
+choosing by class,
 optionally after `roaring_bitmap_run_optimize()` on a copy.
 `roar_unserialize()` is the hostile-input surface (D8). It checks the
 length with `roaring_bitmap_portable_deserialize_size()`, reads with
@@ -235,18 +331,78 @@ buffer, and then calls `roaring_bitmap_internal_validate()`, which the
 upstream README requires for untrusted input. Trailing bytes are an
 error unless `trailing = "ignore"`. The unsafe
 `roaring_bitmap_portable_deserialize()` is never called.
+`roar64_unserialize()` does the same through
+`roaring64_bitmap_portable_deserialize_safe()` and
+`roaring64_bitmap_internal_validate()`. The two formats share no
+distinguishing cookie (the 64-bit one starts with an 8-byte bucket
+count), so the reader is chosen by the caller, never detected (D15).
 
 The frozen format is not exposed: `roaring.h` documents it as
 endian-sensitive, and `roaring_bitmap_frozen_view()` borrows a buffer
 whose alignment an R raw vector does not promise.
+
+`saveRDS()` keeps the D5 behaviour: the bitmap comes back with a null
+pointer and a clear error. `mirai` is supported without that cost.
+`roar_serial_config()` returns
+`mirai::serial_config(c("zuroar", "zuroar64"), ...)` with
+`roar_serialize()` as both serialisers and `roar_unserialize()` and
+`roar64_unserialize()` as the matching readers; passed to
+`mirai::daemons(serial = )`, it ships bitmaps to and from workers through
+R's `refhook` mechanism, serialising only what is sent. `mirai`
+(>= 2.3.0, the first release whose `serial_config()` takes several
+classes) joins `Suggests`, and
+the function errors with `zuroar_error` naming `mirai` when it is not
+installed.
 
 ### 6.5 Errors
 
 Conditions inherit from `zuroar_error`: `zuroar_error_value` for input
 outside the domain; `zuroar_error_format` for bytes that fail the length
 check, the safe deserialiser or validation, with CRoaring's reason
-string; `zuroar_error_pointer` for a null pointer after `readRDS()`; and
-`zuroar_error_memory` when CRoaring returns `NULL` from an allocation.
+string; `zuroar_error_pointer` for a null pointer after `readRDS()`;
+`zuroar_error_index` for a position outside `seq_len(length(x))`;
+`zuroar_error_unsupported` for an operation the class does not define
+(`[<-`, `rev()`, `!`, `x > 5`); and `zuroar_error_memory` when CRoaring
+returns `NULL` from an allocation.
+
+### 6.6 A sorted vector without duplicates
+
+A bitmap behaves, wherever R allows a method, like `sort(unique(v))`
+kept compressed (D11). Positions count from 1 and are doubles, since a
+32-bit bitmap can hold more than `.Machine$integer.max` values; for
+`zuroar64`, positions above 2^53 are a `zuroar_error_index`.
+
+- **`length(x)`** is the cardinality, so `seq_along(x)` and
+  `seq_len(length(x))` work.
+- **`x[i]`** returns a bitmap of the values at positions `i`, as `[`
+  keeps the class of a `Date`. Positive positions select, negative ones
+  exclude, as in R; mixing signs, `NA` or a position past the end is a
+  `zuroar_error_index`, since a bitmap holds no `NA` (D2). A logical
+  index is a mask over positions and is recycled as R recycles one.
+  Order and repetition in `i` do not matter: `x[c(5, 2, 5)]` is the set
+  of the 2nd and 5th values. A contiguous run of positions becomes one
+  intersection with a range (`select` at each end), not a loop; other
+  index vectors select through `roaring_bitmap_select()` per position.
+  `x[]` is `x`.
+- **`x[[k]]`** is the `k`-th smallest value as a plain double (character
+  for `zuroar64`); `roar_select(x, k)` is its vectorised form.
+- **`head(x, n)` and `tail(x, n)`** return bitmaps and follow R's rules
+  for negative `n`.
+- **`c(...)`** with bitmaps and whole-number vectors is their union, of
+  the class of the first bitmap.
+- **`sort(x)` and `unique(x)`** return `x`; `sort(x, decreasing = TRUE)`
+  is an error, as is `rev(x)`: a set has no reversed form, and
+  `rev(as.double(x))` is one call away.
+- **`mtfrm()`** returns `as.double(x)` (decimal text for `zuroar64`), so
+  `v %in% x` and `match(v, x)` give the right answer. They materialise
+  `x`; the documentation points to `roar_contains()` and `roar_rank()`.
+- **`[<-` and `[[<-`** are errors: assigning by position has no meaning
+  for a set; `roar_add()` and `roar_remove()` change it.
+
+R gives no hook for `for (v in x)`, `lapply(x, f)` or `union()`,
+`intersect()` and `setdiff()`, which are not generic. A `for` loop over
+a bitmap is an error from R itself; the documentation says to iterate
+over `as.double(x)`.
 
 ## 7. Building the vendored C
 
@@ -341,7 +497,19 @@ push(hidden)` and `pop` (R3), registers routines and calls
   and the boundaries at 2^16, 2^31 and 2^32 - 1.
 - **Properties.** Select inverts rank; `x & y` is a subset of both;
   cardinality-only variants equal `length()` of the materialised result;
-  `roar_flip()` twice is the identity.
+  `roar_flip()` twice is the identity; `x < y` is `x <= y && x != y`;
+  `roar_disjoint()` is `length(x & y) == 0`; `(x + k) - k` is `x` when no
+  value leaves the domain; `roar_next(x, v)` is the smallest value at or
+  above `v`.
+- **Sorted-vector oracle.** For generated `v` and `s <- sort(unique(v))`:
+  `as.double(roar(v)[i])` equals `s[i]` for positive, negative and
+  logical `i`; `x[[k]]`, `head()`, `tail()`, `c()` and `match()` agree
+  with the same calls on `s`.
+- **Counts.** A `zuroar64` holding more than 2^53 values errors in
+  `length()` and gives the right text from `roar64_length()`, including
+  the full 2^64 range.
+- **`mirai`.** With `roar_serial_config()` set, a bitmap round-trips
+  through a local daemon (skipped when `mirai` is not installed).
 - **Interoperability.** Fixtures written by `pyroaring` and Java's
   RoaringBitmap, committed with generating scripts that run only in a
   development job; both must read `roar_serialize()` output.
@@ -357,7 +525,9 @@ push(hidden)` and `pop` (R3), registers routines and calls
 
 ## 9. Roadmap
 
-Eight stages, numbered 0 to 7. Stages run the quick CI profile unless
+The RFC's plan, superseded by `.agents/roadmap.md`, which splits Stage 7
+in three and makes Stage 2 `full`. Eight stages, numbered 0 to 7. Stages
+run the quick CI profile unless
 marked `full`. Each is one pull request, merged on green; nobody waits on
 the post-merge full run.
 
@@ -394,7 +564,8 @@ any of them.
 - **D4 (C).** Value semantics: every function returns a new bitmap, made
   cheap by copy-on-write.
 - **D5 (C).** External pointers, explicit serialisation and a clear
-  error for a pointer that did not survive `saveRDS()`; see Q1.
+  error for a pointer that did not survive `saveRDS()`. `mirai` is
+  served by `roar_serial_config()` (§6.4). Settles Q1.
 - **D6 (C).** R conventions at the boundary: inclusive ranges and
   1-based select.
 - **D7 (C).** No C API and no installed header in v0.1.0. No sibling has
@@ -405,6 +576,23 @@ any of them.
   authors are copyright holders in `Authors@R`, with upstream `LICENSE`
   and `AUTHORS` in `inst/COPYRIGHTS`.
 - **D10 (C).** Single-threaded; no bitmap is shared across threads.
+- **D11 (C).** A bitmap behaves as a sorted vector without duplicates
+  wherever R lets a method say so: positional `[` returning a bitmap,
+  `[[`, `head()`, `tail()`, `c()` as union, `sort()`, `unique()`,
+  `mtfrm()`, and `+` and `-` with a number as a shift (§6.3, §6.6). Where
+  vector meaning and set meaning collide (`rev()`, `[<-`, `x > 5`), the
+  operation is an error rather than a silent conversion.
+- **D12 (C).** Shifting a value out of the domain is an error unless
+  `drop = TRUE`, unlike pyroaring's silent drop (D2).
+- **D13 (C).** `roar()` rejects a logical vector with an error that
+  points to `which()`. Settles Q3.
+- **D14 (C).** Counts are doubles; a `zuroar64` count above 2^53 is an
+  error, and `roar64_length()` gives every count exactly as text (§6.1).
+- **D15 (C).** 64-bit bytes are read by `roar64_unserialize()`; the
+  format is never guessed from the bytes (§6.4).
+- **D16 (C).** A change to a `zuroar64` copies the whole bitmap in
+  v0.1.0, because `roaring64` has no copy-on-write; the documentation
+  says so. Sharing containers would need upstream support.
 
 ## 11. Acceptance criteria for v0.1.0
 
@@ -416,20 +604,24 @@ any of them.
 - `pyroaring` and Java fixtures read correctly and read this package's
   output.
 - `R CMD check --as-cran` is clean on all r-actions legs; no `Imports`.
-- Eight stages. A stage that needs a second pull request moves scope to
-  §2's later list, not the release.
+- The stages of `.agents/roadmap.md`, which supersedes §9. A stage that
+  needs a second pull request moves scope to §2's later list, not the
+  release.
 
 ## 12. Open questions
 
-- **Q1.** Should a bitmap survive `saveRDS()` and `mirai` unaided? The
-  alternative to D5 makes the portable bytes the value and the pointer a
-  cache rebuilt on first use, at one serialisation per result. RFC 0037's
-  dictionary keeps a protected field for the same reason.
+- **Q1. Settled 2026-11-02 by D5.** Keeping the portable bytes beside
+  every bitmap would roughly double memory and serialise every result,
+  in a package whose point is compression. `mirai`, the case that
+  matters in practice, is served on demand by `roar_serial_config()`;
+  `saveRDS()` stays explicit. An ALTREP class with a serialisation
+  method is the route if this is reopened.
 - **Q2.** If `zutable`'s kernel needs bitmaps in C, should `zuroar`
   install a header and C table (R10.1), or `zutable` vendor its own copy
   with hidden symbols?
-- **Q3.** Should `roar()` take a logical vector as its `TRUE`
-  positions, fixing a 1-based meaning on a 0-based domain?
+- **Q3. Settled 2026-11-02 by D13.** A logical vector would fix a
+  1-based meaning on a 0-based domain; `roar(which(l))` says it
+  explicitly.
 - **Q4.** Does any CRAN flavour's compiler mishandle the AVX-512 target
   regions? If so, `CROARING_COMPILER_SUPPORTS_AVX512=0` is a narrower
   fallback than D3's.
@@ -437,6 +629,23 @@ any of them.
   board's `CRAN intent` records it.
 
 ## 13. Sources and verification
+
+Checked on 2 November 2026, for the amendment:
+
+- [pyroaring](https://github.com/Ezibenroc/PyRoaringBitMap) 1.2.0
+  (2026-10-02, bundling CRoaring 5.2.2): `pyroaring/__init__.pyi` for the
+  API of §5.1, and `pyroaring/abstract_bitmap.pxi` for positional
+  indexing, slicing, `shift`'s silent drop and its deserialisation, which
+  uses `portable_deserialize_safe()` and `internal_validate()` as D8 does.
+- R 4.5.2: `union()`, `intersect()`, `setdiff()`, `is.element()`,
+  `%in%` and `match()` do not dispatch; `[`, `head()`, `tail()`, `rev()`,
+  `sort()`, `unique()`, `format()` and `mtfrm()` do.
+- `mirai` 2.7.3: `serial_config(class, sfunc, ufunc)`, built on R's
+  `refhook`, passed to `daemons(serial = )`; its NEWS gives 2.3.0 as the
+  release that accepts several classes.
+- CRoaring 5.4.0 `roaring64.h`: no copy-on-write; a `uint64_t`
+  cardinality; `roaring64_bitmap_portable_deserialize_safe()` and
+  `roaring64_bitmap_internal_validate()`.
 
 Checked on 1 November 2026:
 

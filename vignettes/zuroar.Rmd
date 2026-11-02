@@ -1,0 +1,315 @@
+---
+title: "Getting started with zuroar"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Getting started with zuroar}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+# zuroar is being built stage by stage towards v0.1.0. Until its functions
+# exist, the chunks below are not run, and the output after each `#>` is
+# the result the package design specifies. Stage 7 of the roadmap turns
+# evaluation on and replaces these comments with real output.
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>", eval = FALSE)
+```
+
+> **In development.** This article shows the API planned for zuroar
+> 0.1.0. The functions are not available yet, and the output shown is
+> the output the design specifies.
+
+zuroar gives R compressed sets of whole numbers. A bitmap holds values
+from 0 to 2^32 - 1, stores dense stretches and long runs in a fraction of
+the memory a plain vector needs, and answers membership, counts and set
+operations without expanding them. To R code it looks like a sorted
+vector without duplicates. Bitmaps are written in the portable Roaring
+format, so Python, Java, Go and Rust programs can read them.
+
+```{r}
+library(zuroar)
+```
+
+## Building a bitmap
+
+`roar()` takes integer or whole-number double values. Order and
+duplicates don't matter: a bitmap is a set.
+
+```{r}
+mon <- roar(c(42, 3, 99, 8, 15, 8))
+length(mon)
+#> [1] 5
+as.double(mon)
+#> [1]  3  8 15 42 99
+```
+
+`roar_range()` builds every value between two ends, both included, as
+`seq()` does. A million consecutive values compress to a few run
+containers.
+
+```{r}
+y <- roar_range(1, 1e6)
+length(y)
+#> [1] 1e+06
+```
+
+`roar_add()` and `roar_remove()` take values, or a range through `from`
+and `to`. Like every zuroar function, they return a new bitmap and leave
+their argument unchanged.
+
+```{r}
+y <- roar_remove(y, from = 10, to = 19)
+y <- roar_add(y, from = 2e6, to = 3e6)
+length(y)
+#> [1] 1999991
+```
+
+## A sorted vector without duplicates
+
+Wherever R allows it, a bitmap behaves like `sort(unique(v))`. Positions
+count from 1, and `[` returns a bitmap, the way it keeps the class of a
+`Date`.
+
+```{r}
+mon[[2]]
+#> [1] 8
+as.double(mon[2:3])
+#> [1]  8 15
+as.double(mon[-1])
+#> [1]  8 15 42 99
+as.double(head(mon, 2))
+#> [1] 3 8
+as.double(tail(mon, 1))
+#> [1] 99
+```
+
+`c()` is the union, and adding or subtracting a number shifts every
+value.
+
+```{r}
+as.double(c(mon, roar(c(1, 100))))
+#> [1]   1   3   8  15  42  99 100
+as.double(mon + 10)
+#> [1]  13  18  25  52 109
+```
+
+A shift that would push a value below 0 or above 2^32 - 1 is an error,
+so values never disappear silently. Ask for that explicitly with
+`drop = TRUE`.
+
+```{r}
+mon - 5            # an error: 3 - 5 is below 0
+as.double(roar_shift(mon, by = -5, drop = TRUE))
+#> [1]  3 10 37 94
+```
+
+Where the vector meaning and the set meaning disagree, zuroar refuses
+rather than guess: `rev(mon)`, `mon[1] <- 5` and `mon > 10` are errors.
+To loop over the values, convert first: `for (v in as.double(mon))`.
+
+## Membership and queries
+
+`roar_contains()` is the fast membership test. `%in%` gives the same
+answer but expands the bitmap into a vector first.
+
+```{r}
+roar_contains(mon, c(8, 9))
+#> [1]  TRUE FALSE
+8 %in% mon
+#> [1] TRUE
+min(mon)
+#> [1] 3
+max(mon)
+#> [1] 99
+```
+
+Ranges are inclusive at both ends. `roar_count()` counts the values in a
+range; `roar_contains_range()` asks whether all of them are present.
+
+```{r}
+roar_count(y, from = 1, to = 20)
+#> [1] 10
+roar_contains_range(y, from = 1, to = 9)
+#> [1] TRUE
+roar_contains_range(y, from = 1, to = 10)
+#> [1] FALSE
+```
+
+`roar_rank()` counts the values at or below `v`, and `roar_select()` is
+its inverse: the `k`-th smallest value, counting from 1. `roar_next()`
+and `roar_prev()` find the nearest value on either side, and give `NA`
+when there is none.
+
+```{r}
+roar_rank(y, 25)
+#> [1] 15
+roar_select(y, 15)
+#> [1] 25
+roar_next(y, c(10, 30))
+#> [1] 20 30
+roar_prev(y, 10)
+#> [1] 9
+roar_next(mon, 100)
+#> [1] NA
+```
+
+`roar_values()` extracts a bounded slice without expanding the rest.
+
+```{r}
+roar_values(y, from = 999998, n = 4)
+#> [1]  999998  999999 1000000 2000000
+```
+
+## Set algebra
+
+Between two bitmaps, `|` is the union and `&` the intersection.
+`roar_andnot()` is the difference and `roar_xor()` the symmetric
+difference.
+
+```{r}
+tue <- roar(c(8, 15, 16, 23, 42))
+
+as.double(mon | tue)
+#> [1]  3  8 15 16 23 42 99
+as.double(mon & tue)
+#> [1]  8 15 42
+as.double(roar_andnot(mon, tue))
+#> [1]  3 99
+as.double(roar_xor(mon, tue))
+#> [1]  3 16 23 99
+```
+
+`roar_union()` and `roar_intersect()` take any number of bitmaps.
+
+```{r}
+wed <- roar(c(8, 42, 50))
+as.double(roar_intersect(mon, tue, wed))
+#> [1]  8 42
+```
+
+Comparisons are about sets: `==` is equality, `<=` subset and `<` strict
+subset.
+
+```{r}
+(mon & tue) <= mon
+#> [1] TRUE
+mon < mon
+#> [1] FALSE
+```
+
+When only a number is needed, no bitmap is built at all.
+
+```{r}
+roar_cardinality(mon, tue, op = "and")
+#> [1] 3
+roar_jaccard(mon, tue)
+#> [1] 0.4285714
+roar_intersects(mon, tue)
+#> [1] TRUE
+roar_disjoint(mon, roar(c(1, 2)))
+#> [1] TRUE
+```
+
+`roar_flip()` complements a bitmap within a range.
+
+```{r}
+as.double(roar_flip(roar(c(1, 2, 5)), from = 0, to = 5))
+#> [1] 0 3 4
+```
+
+## Exact values
+
+Values are never silently changed. `as.double()` is exact over the whole
+domain; `as.integer()` is an error rather than `NA` for values above
+`.Machine$integer.max`.
+
+```{r}
+big <- roar(c(0, 2^31, 2^32 - 1))
+as.double(big)
+#> [1]          0 2147483648 4294967295
+as.integer(big)    # an error: 2^31 is above .Machine$integer.max
+```
+
+Input outside the domain is an error of class `zuroar_error_value`, which
+names the first offending position. A logical vector is refused too: use
+`which()` to say which positions you mean.
+
+```{r}
+roar(c(1, -1))     # an error naming element 2
+keep <- c(TRUE, FALSE, TRUE)
+as.double(roar(which(keep)))
+#> [1] 1 3
+```
+
+## Compression
+
+`roar_optimize()` converts long runs to run containers. `roar_size()`
+reports the bytes the bitmap uses, and `roar_stats()` which kinds of
+container hold the values.
+
+```{r}
+y <- roar_optimize(y)
+roar_size(y)
+roar_stats(y)
+```
+
+The benchmarks article compares memory and speed with base R and the
+bit package.
+
+## 64-bit bitmaps
+
+`roar64()` builds a bitmap over 0 to 2^64 - 1. R has no exact 64-bit
+integer, so values go in and come out as decimal text, or as doubles
+below 2^53.
+
+```{r}
+z <- roar64(c("0", "18446744073709551615"))
+length(z)
+#> [1] 2
+as.character(z)
+#> [1] "0"                    "18446744073709551615"
+```
+
+Counts are doubles too, and `length()` is an error if one exceeds 2^53.
+`roar64_length()` always gives the count exactly, as text.
+
+```{r}
+roar64_length(z)
+#> [1] "2"
+```
+
+## Saving and sharing
+
+`roar_serialize()` writes the portable Roaring format as a raw vector.
+`roar_unserialize()` reads it back, checking untrusted bytes before using
+them, and `roar64_unserialize()` reads the 64-bit format.
+
+```{r}
+bytes <- roar_serialize(mon)
+roar_unserialize(bytes) == mon
+#> [1] TRUE
+roar64_unserialize(roar_serialize(z)) == z
+#> [1] TRUE
+```
+
+The same bytes can be read by pyroaring's `BitMap.deserialize()`, Java's
+RoaringBitmap and the other Roaring implementations.
+
+A bitmap lives outside R's memory, so `saveRDS()` alone doesn't keep it:
+save `roar_serialize(x)` instead. For parallel work with mirai,
+`roar_serial_config()` lets bitmaps travel to workers and back.
+
+```{r}
+library(mirai)
+daemons(2, serial = roar_serial_config())
+m <- mirai(length(x), x = mon)
+m[]
+#> [1] 5
+daemons(0)
+```
+
+## Where next
+
+`zuroar_info()` reports the CRoaring version and which processor
+instructions the running build uses. The reference pages document every
+function.

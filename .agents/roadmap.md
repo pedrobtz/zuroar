@@ -1,6 +1,9 @@
 # zuroar: roadmap
 
-Status: approved 2026-11-02. Implements [design.md](design.md).
+Status: approved 2026-11-02; revised the same day for the design's
+pyroaring amendment (sorted-vector methods in Stage 4, shifting and new
+comparisons in Stage 3, `mirai` in Stage 5). Implements
+[design.md](design.md).
 Target: v0.1.0, the first CRAN release.
 Tracking: [v0.1.0 (#1)](https://github.com/pedrobtz/zuroar/issues/1), with
 one sub-issue per stage;
@@ -126,11 +129,14 @@ modified.
 
 - `src/zro_bitmap.c`: the external pointer with finaliser and copy-on-write
   enabled; the null-pointer check every entry point calls.
-- `roar()`, `roar_range()`, `roar_add()`, `roar_remove()`,
-  `roar_contains()`; `length()`, `min()`, `max()`, `range()` (`Summary`);
-  `as.integer()`, `as.double()`; `print()`.
+- `roar()` (with `optimize = TRUE`), `roar_range()`, `roar_add()`,
+  `roar_remove()`, `roar_contains()`; `length()`, `min()`, `max()`,
+  `range()` (`Summary`; other members error); `as.integer()`,
+  `as.double()`; `print()`, `format()`.
 - Input validation and the condition classes `zuroar_error`,
-  `zuroar_error_value`, `zuroar_error_pointer`, `zuroar_error_memory`.
+  `zuroar_error_value`, `zuroar_error_pointer`, `zuroar_error_memory`;
+  a logical vector given to `roar()` is an error pointing to `which()`
+  (D13).
 - Test generators that hit array, bitset and run containers and the
   boundaries at 2^16, 2^31 and 2^32 - 1; base R oracle tests.
 
@@ -161,20 +167,29 @@ cardinality-only variants.
 
 **Work.**
 
-- `Ops` methods `|`, `&`, `==`, `!=`, `<=`, `>=`; other operators error.
+- `Ops` methods between bitmaps: `|`, `&`, `==`, `!=`, `<=`, `<`, `>=`,
+  `>`; `-` between bitmaps, `!` and comparisons with numbers error with
+  `zuroar_error_unsupported`.
+- Shifting: `x + k`, `k + x`, `x - k` and `roar_shift(x, by, drop =
+  FALSE)` (D12).
+- `c()` as union.
 - `roar_xor()`, `roar_andnot()`, `roar_flip()`, `roar_union()`,
-  `roar_intersect()`, `roar_cardinality()`, `roar_jaccard()`.
+  `roar_intersect()`, `roar_cardinality()`, `roar_jaccard()`,
+  `roar_disjoint()`, `roar_intersects()`.
 
 **Exit criteria.**
 
 - Every operation matches `union()`, `intersect()` and `setdiff()` on the
-  generated sets.
+  generated sets, and `c()` matches `sort(unique(c(...)))`.
 - Property tests pass: `x & y` is a subset of both; cardinality-only
   results equal `length()` of the materialised result; `roar_flip()` twice
-  is the identity.
+  is the identity; `x < y` is `x <= y && x != y`; `roar_disjoint()` is
+  `length(x & y) == 0`; `(x + k) - k` is `x`.
+- A shift out of the domain is a `zuroar_error_value`, and with
+  `drop = TRUE` matches the oracle with those values removed.
 - `R CMD check` passes on the quick profile.
 
-**Design.** §5, §6.3, §8 (properties).
+**Design.** §5, §6.3, §8 (properties), D11, D12.
 
 ## Stage 4 — Rank, select and ranges
 
@@ -183,23 +198,34 @@ cardinality-only variants.
 
 **CI.** `quick`.
 
-**Goal.** Ordered queries and bounded extraction work with R's
-conventions.
+**Goal.** Ordered queries, range editing and bounded extraction work
+with R's conventions, and a bitmap behaves as a sorted vector.
 
 **Work.**
 
-- `roar_rank()`, `roar_select()` (1-based), `roar_count()` (inclusive
-  range), `roar_values()` (bounded extraction), `roar_optimize()`,
-  `roar_stats()`, `roar_size()`.
+- `roar_rank()`, `roar_select()` (1-based), `roar_next()`, `roar_prev()`,
+  `roar_count()` and `roar_contains_range()` (inclusive ranges),
+  `roar_values()` (bounded extraction), `roar_optimize()`, `roar_stats()`,
+  `roar_size()`.
+- `roar_add(from =, to =)` and `roar_remove(from =, to =)`.
+- Sorted-vector methods (§6.6): `[`, `[[`, `head()`, `tail()`, `sort()`,
+  `unique()`, `mtfrm()`; `[<-`, `[[<-`, `rev()` and
+  `sort(decreasing = TRUE)` error; `zuroar_error_index` and
+  `zuroar_error_unsupported`.
 
 **Exit criteria.**
 
 - `roar_rank()` matches `findInterval()` on the generated sets.
 - `roar_select(x, roar_rank(x, v)) == v` for every `v` in `x`.
+- `roar_next()` and `roar_prev()` match the oracle, with `NA` when no
+  value qualifies.
 - Range bounds at 0 and 2^32 - 1 are inclusive and tested.
+- The sorted-vector oracle of design §8 passes for positive, negative and
+  logical `i`, `[[`, `head()`, `tail()` and `match()`; mixed signs, `NA`
+  and positions past the end are `zuroar_error_index`.
 - `R CMD check` passes on the quick profile.
 
-**Design.** §5, §6.2, D6.
+**Design.** §5, §6.2, §6.6, D6, D11.
 
 ## Stage 5 — Portable serialisation
 
@@ -224,10 +250,15 @@ implementations' bytes read correctly, and no corrupt input crashes.
   corrupted cookies, container counts, offsets and run lengths.
 - A `libFuzzer` target over the deserialising entry point, run in
   development only.
+- `roar_serial_config()` for `mirai::daemons(serial = )`; `mirai (>= 2.3.0)`
+  in `Suggests`, guarded so the package works without it.
 
 **Exit criteria.**
 
 - Round trips are exact on the generated sets.
+- A bitmap round-trips through a local `mirai` daemon with
+  `roar_serial_config()` set; the test skips without `mirai`, and the
+  `nosuggests` leg passes.
 - The `pyroaring` and Java fixtures read to the expected sets.
 - Every hostile input is a `zuroar_error_format`, and the ASan, UBSan and
   valgrind legs are clean.
@@ -235,7 +266,8 @@ implementations' bytes read correctly, and no corrupt input crashes.
   `src/croaring/`.
 - A full-profile r-actions run is green.
 
-**Design.** §6.4, §6.5, §8 (interoperability, hostile input), D8.
+**Design.** §6.4, §6.5, §8 (interoperability, hostile input, `mirai`),
+D5, D8.
 
 ## Stage 6 — 64-bit bitmaps
 
@@ -251,8 +283,14 @@ through decimal text.
 
 - `src/zro_bitmap64.c` on CRoaring's `roaring64`; `roar64()` from decimal
   text or whole doubles below 2^53, and promotion from `zuroar`.
-- `roar64_` functions where the classes differ; the 32-bit generics and
-  operators for `zuroar64`; 64-bit serialisation.
+- `roar64_` functions where the classes differ; the 32-bit generics,
+  operators and sorted-vector methods for `zuroar64`, with positions above
+  2^53 a `zuroar_error_index`; 64-bit serialisation,
+  `roar64_unserialize()` with 64-bit hostile-input tests, and the 64-bit
+  half of `roar_serial_config()`.
+- Counts as doubles that error above 2^53, `roar64_length()` as exact text,
+  and the full 2^64 range read correctly (D14).
+- Documentation that changes to a `zuroar64` copy the whole bitmap (D16).
 - Output as decimal text, or double when every value is below 2^53.
 - An error for mixing `zuroar` and `zuroar64` in one operation.
 
@@ -284,10 +322,15 @@ with every claim measured.
 - An article with benchmarks against base R and `bit` on union,
   intersection, membership and memory over dense, sparse and run-heavy sets.
 - The pkgdown reference index.
+- The "Get started" vignette, `vignettes/zuroar.Rmd`, written ahead of
+  the code with `eval = FALSE` and the design's expected output as `#>`
+  comments: turn evaluation on, delete those comments, and drop the
+  "In development" note.
 
 **Exit criteria.**
 
 - `README.md` is knitted from `README.Rmd` and its examples run.
+- `vignettes/zuroar.Rmd` runs every chunk, with no `eval = FALSE` left.
 - The article builds on the pkgdown workflow; no speed-up is stated
   without a measurement.
 - `R CMD check` passes on the quick profile.
@@ -358,11 +401,8 @@ From design §2, in the order expected:
 
 ## Open questions
 
-- **Q1** (Stage 2). Should a bitmap survive `saveRDS()` and `mirai`
-  unaided, with the portable bytes as the value and the pointer as a cache?
-  Stage 2 builds D5's explicit serialisation unless this is decided first.
-- **Q3** (Stage 2). Should `roar()` accept a logical vector as its `TRUE`
-  positions?
+Q1 and Q3 were settled on 2026-11-02 by design D5 and D13.
+
 - **Q4** (Stage 1). Does any CRAN flavour's compiler mishandle the AVX-512
   target regions? Stage 1's full run answers it; the narrower fallback is
   `CROARING_COMPILER_SUPPORTS_AVX512=0`.
