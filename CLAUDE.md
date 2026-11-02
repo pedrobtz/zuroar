@@ -11,9 +11,13 @@ implementation of Roaring bitmaps. A `zuroar` bitmap holds values from 0
 to 2^32 - 1 and a `zuroar64` bitmap values up to 2^64 - 1. Both answer
 membership, cardinality, rank, select and the set operations without
 materialising a vector, and serialise to the portable Roaring format
-that Java, Go, Rust, Python and C share. It has no `Imports` and no
-`LinkingTo`; only `testthat` in `Suggests`. It is not a general set
-package, not a bit vector (no length, universe or `[<-`), not an
+that Java, Go, Rust, Python and C share. To R code a bitmap looks like a
+sorted vector without duplicates (`x[i]`,
+[`head()`](https://rdrr.io/r/utils/head.html),
+[`c()`](https://rdrr.io/r/base/c.html)), and its API covers what
+pyroaring offers, in R form (design §5.1). It has no `Imports` and no
+`LinkingTo`; `testthat` and `mirai` are in `Suggests`. It is not a
+general set package, not a bit vector (no universe or `[<-`), not an
 algorithm library (every set operation is CRoaring’s) and, in v0.1.0,
 not a C API.
 
@@ -22,8 +26,8 @@ The specification is
 adopted from [RFC
 0061](https://github.com/pedrobtz/packages/blob/main/rfcs/started/0061-zuroar-roaring-bitmaps.md).
 It outranks this file: `CLAUDE.md` orients, the design doc decides. Its
-decisions D1 to D10 are the maintainer’s to overturn, and its open
-questions Q1 to Q5 are still open.
+decisions D1 to D16 are the maintainer’s to overturn; open questions Q2,
+Q4 and Q5 are still open.
 
 ## Current state
 
@@ -127,6 +131,10 @@ one when a stage establishes it.
   includer of `roaring.c` and brackets it with
   `#pragma GCC visibility push(hidden)`. Exported `roaring_*` names
   would clash with a sibling’s vendored copy in the same session.
+- **Vector meaning never silently overrides set meaning.** Where the two
+  collide ([`rev()`](https://rdrr.io/r/base/rev.html), `[<-`, `x > 5`, a
+  shift out of the domain), the result is an error, not a conversion to
+  a plain vector or a dropped value (D11, D12).
 - **No `Imports`.** A runtime dependency needs a design decision first.
 
 ## Testing conventions

@@ -15,7 +15,8 @@
     </button>
 
     <div id="navbar" class="collapse navbar-collapse ms-3">
-      <ul class="navbar-nav me-auto"><li class="nav-item"><a class="nav-link" href="reference/index.html">Reference</a></li>
+      <ul class="navbar-nav me-auto"><li class="nav-item"><a class="nav-link" href="articles/zuroar.html">Get started</a></li>
+<li class="nav-item"><a class="nav-link" href="reference/index.html">Reference</a></li>
 <li class="nav-item"><a class="nav-link" href="news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
  <input class="form-control" type="search" name="search-input" id="search-input" autocomplete="off" aria-label="Search site" placeholder="Search for" data-search-index="search.json"></form></li>
@@ -37,8 +38,8 @@
 <p>This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.</p>
 <div class="section level2">
 <h2 id="what-this-is">What this is<a class="anchor" aria-label="anchor" href="#what-this-is"></a></h2>
-<p><code>zuroar</code> gives R compressed sets of unsigned integers by wrapping <a href="https://github.com/RoaringBitmap/CRoaring" class="external-link">CRoaring</a>, the reference C implementation of Roaring bitmaps. A <code>zuroar</code> bitmap holds values from 0 to 2^32 - 1 and a <code>zuroar64</code> bitmap values up to 2^64 - 1. Both answer membership, cardinality, rank, select and the set operations without materialising a vector, and serialise to the portable Roaring format that Java, Go, Rust, Python and C share. It has no <code>Imports</code> and no <code>LinkingTo</code>; only <code>testthat</code> in <code>Suggests</code>. It is not a general set package, not a bit vector (no length, universe or <code>[&lt;-</code>), not an algorithm library (every set operation is CRoaring’s) and, in v0.1.0, not a C API.</p>
-<p>The specification is <a href=".agents/design.html"><code>.agents/design.md</code></a>, adopted from <a href="https://github.com/pedrobtz/packages/blob/main/rfcs/started/0061-zuroar-roaring-bitmaps.md" class="external-link">RFC 0061</a>. It outranks this file: <code>CLAUDE.md</code> orients, the design doc decides. Its decisions D1 to D10 are the maintainer’s to overturn, and its open questions Q1 to Q5 are still open.</p>
+<p><code>zuroar</code> gives R compressed sets of unsigned integers by wrapping <a href="https://github.com/RoaringBitmap/CRoaring" class="external-link">CRoaring</a>, the reference C implementation of Roaring bitmaps. A <code>zuroar</code> bitmap holds values from 0 to 2^32 - 1 and a <code>zuroar64</code> bitmap values up to 2^64 - 1. Both answer membership, cardinality, rank, select and the set operations without materialising a vector, and serialise to the portable Roaring format that Java, Go, Rust, Python and C share. To R code a bitmap looks like a sorted vector without duplicates (<code>x[i]</code>, <code><a href="https://rdrr.io/r/utils/head.html" class="external-link">head()</a></code>, <code><a href="https://rdrr.io/r/base/c.html" class="external-link">c()</a></code>), and its API covers what pyroaring offers, in R form (design §5.1). It has no <code>Imports</code> and no <code>LinkingTo</code>; <code>testthat</code> and <code>mirai</code> are in <code>Suggests</code>. It is not a general set package, not a bit vector (no universe or <code>[&lt;-</code>), not an algorithm library (every set operation is CRoaring’s) and, in v0.1.0, not a C API.</p>
+<p>The specification is <a href=".agents/design.html"><code>.agents/design.md</code></a>, adopted from <a href="https://github.com/pedrobtz/packages/blob/main/rfcs/started/0061-zuroar-roaring-bitmaps.md" class="external-link">RFC 0061</a>. It outranks this file: <code>CLAUDE.md</code> orients, the design doc decides. Its decisions D1 to D16 are the maintainer’s to overturn; open questions Q2, Q4 and Q5 are still open.</p>
 </div>
 <div class="section level2">
 <h2 id="current-state">Current state<a class="anchor" aria-label="anchor" href="#current-state"></a></h2>
@@ -100,6 +101,8 @@
 <strong>No architecture flags in <code>Makevars</code>.</strong> No <code>-mavx2</code> or <code>-march</code>; SIMD comes from CRoaring’s run-time dispatch (D3). CRAN rejects such flags.</li>
 <li>
 <strong>CRoaring’s symbols stay hidden.</strong> The wrapper unit is the only includer of <code>roaring.c</code> and brackets it with <code>#pragma GCC visibility push(hidden)</code>. Exported <code>roaring_*</code> names would clash with a sibling’s vendored copy in the same session.</li>
+<li>
+<strong>Vector meaning never silently overrides set meaning.</strong> Where the two collide (<code><a href="https://rdrr.io/r/base/rev.html" class="external-link">rev()</a></code>, <code>[&lt;-</code>, <code>x &gt; 5</code>, a shift out of the domain), the result is an error, not a conversion to a plain vector or a dropped value (D11, D12).</li>
 <li>
 <strong>No <code>Imports</code>.</strong> A runtime dependency needs a design decision first.</li>
 </ul></div>
