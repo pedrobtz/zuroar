@@ -15,4 +15,4 @@ jobs:
       issues: write
     with:
       upstream-repo: RoaringBitmap/CRoaring
-      current-version: sed -n 's/^  tag: //p' vendor.yaml
+      current-version: "sed -n 's/^  tag: //p' vendor.yaml"
