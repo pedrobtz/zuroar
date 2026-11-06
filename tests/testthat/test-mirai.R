@@ -39,6 +39,11 @@ test_that("a bitmap travels to a mirai daemon with roar_serial_config() set", {
   y <- mirai::call_mirai(m)$data
   expect_s3_class(y, "zuroar")
   expect_identical(as.double(y), c(1, 5, 7, 9, 4294967295))
+  z <- roar64(c("1", "18446744073709551615"))
+  m64 <- mirai::mirai(zuroar::roar_add(z, "7"), z = z)
+  w <- mirai::call_mirai(m64)$data
+  expect_s3_class(w, "zuroar64")
+  expect_identical(as.character(w), c("1", "7", "18446744073709551615"))
 })
 
 test_that("roar_serial_config() returns a mirai configuration", {

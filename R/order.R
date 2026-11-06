@@ -11,12 +11,14 @@
 #' and `roar_contains_range()` tells whether every one of them is present.
 #'
 #' @inheritParams roar_add
-#' @param values Whole numbers from 0 to 2^32 - 1.
+#' @param values Whole numbers from 0 to 2^32 - 1; for a `zuroar64`,
+#'   decimal text or doubles below 2^53.
 #' @param k Positions, counting from 1 up to `length(x)`.
 #' @param from,to The first and last values of a range, both included.
 #' @return `roar_rank()` and `roar_count()` doubles, `roar_select()`,
 #'   `roar_next()` and `roar_prev()` doubles as long as their second
-#'   argument, `roar_contains_range()` a single logical.
+#'   argument (decimal text for a `zuroar64`), `roar_contains_range()` a
+#'   single logical.
 #' @export
 #' @examples
 #' x <- roar(c(1, 7, 9, 100000))
@@ -31,6 +33,9 @@
 #' roar_contains_range(y, from = 1, to = 9)
 roar_rank <- function(x, values) {
   check_bitmap(x)
+  if (is64(x)) {
+    return(.Call(zro64_rank, x, check_values(values, wide = TRUE)))
+  }
   .Call(zro_rank, x, check_values(values))
 }
 
@@ -38,6 +43,9 @@ roar_rank <- function(x, values) {
 #' @export
 roar_select <- function(x, k) {
   check_bitmap(x)
+  if (is64(x)) {
+    return(.Call(zro64_select, x, check_positions(k, length(x))))
+  }
   .Call(zro_select, x, check_positions(k, length(x)))
 }
 
@@ -45,6 +53,9 @@ roar_select <- function(x, k) {
 #' @export
 roar_next <- function(x, values) {
   check_bitmap(x)
+  if (is64(x)) {
+    return(.Call(zro64_next, x, check_values(values, wide = TRUE)))
+  }
   .Call(zro_next, x, check_values(values))
 }
 
@@ -52,6 +63,9 @@ roar_next <- function(x, values) {
 #' @export
 roar_prev <- function(x, values) {
   check_bitmap(x)
+  if (is64(x)) {
+    return(.Call(zro64_prev, x, check_values(values, wide = TRUE)))
+  }
   .Call(zro_prev, x, check_values(values))
 }
 
@@ -59,6 +73,9 @@ roar_prev <- function(x, values) {
 #' @export
 roar_count <- function(x, from, to) {
   check_bitmap(x)
+  if (is64(x)) {
+    return(.Call(zro64_range_count, x, check_range64(from, to)))
+  }
   .Call(zro_range_count, x, check_range(from, to))
 }
 
@@ -66,6 +83,9 @@ roar_count <- function(x, from, to) {
 #' @export
 roar_contains_range <- function(x, from, to) {
   check_bitmap(x)
+  if (is64(x)) {
+    return(.Call(zro64_contains_range, x, check_range64(from, to)))
+  }
   .Call(zro_contains_range, x, check_range(from, to))
 }
 
@@ -78,17 +98,29 @@ roar_contains_range <- function(x, from, to) {
 #' @inheritParams roar_add
 #' @param from The smallest value to consider.
 #' @param n The most values to return: a whole number, or `Inf` for all.
-#' @param type `"double"`, the default, or `"integer"`, which is an error
-#'   when a returned value is above `.Machine$integer.max`.
+#' @param type `"double"`, the default for a `zuroar`, or `"integer"`,
+#'   which is an error when a returned value is above
+#'   `.Machine$integer.max`. For a `zuroar64`, `"character"`, the default,
+#'   gives decimal text; `"double"` is an error at or above 2^53.
 #' @return A double or integer vector of at most `n` values.
 #' @export
 #' @examples
 #' y <- roar_range(1, 1e6)
 #' roar_values(y, from = 500, n = 5)
 #' roar_values(y, n = 3, type = "integer")
-roar_values <- function(x, from = 0, n, type = c("double", "integer")) {
+roar_values <- function(
+  x,
+  from = 0,
+  n,
+  type = c("double", "integer", "character")
+) {
   check_bitmap(x)
-  from <- check_scalar_value(from, "from")
+  wide <- is64(x)
+  from <- if (wide) {
+    check_scalar_value64(from, "from")
+  } else {
+    check_scalar_value(from, "from")
+  }
   if (
     missing(n) ||
       !(is.numeric(n) && length(n) == 1 && !is.na(n) && n >= 0) ||
@@ -99,13 +131,24 @@ roar_values <- function(x, from = 0, n, type = c("double", "integer")) {
       "`n` must be a single non-negative whole number, or Inf."
     )
   }
-  type <- if (missing(type)) "double" else type
-  if (
-    !(is.character(type) &&
-      length(type) == 1 &&
-      type %in% c("double", "integer"))
-  ) {
-    zro_abort("zuroar_error", '`type` must be "double" or "integer".')
+  type <- if (missing(type)) (if (wide) "character" else "double") else type
+  types <- if (wide) {
+    c("character", "double", "integer")
+  } else {
+    c("double", "integer")
+  }
+  if (!(is.character(type) && length(type) == 1 && type %in% types)) {
+    zro_abort(
+      "zuroar_error",
+      sprintf(
+        "`type` must be one of %s.",
+        paste0('"', types, '"', collapse = ", ")
+      )
+    )
+  }
+  if (wide) {
+    code <- match(type, c("character", "double", "integer")) - 1L
+    return(.Call(zro64_values_from, x, from, as.double(n), code))
   }
   .Call(zro_values, x, from, as.double(n), type == "integer")
 }
@@ -131,14 +174,14 @@ roar_values <- function(x, from = 0, n, type = c("double", "integer")) {
 #' roar_size(x)
 roar_optimize <- function(x) {
   check_bitmap(x)
-  .Call(zro_optimize, x)
+  (if (is64(x)) .Call(zro64_optimize, x) else .Call(zro_optimize, x))
 }
 
 #' @rdname roar_optimize
 #' @export
 roar_stats <- function(x) {
   check_bitmap(x)
-  st <- .Call(zro_stats, x)
+  st <- (if (is64(x)) .Call(zro64_stats, x) else .Call(zro_stats, x))
   data.frame(
     kind = attr(st, "kind"),
     containers = st$containers,
@@ -151,5 +194,5 @@ roar_stats <- function(x) {
 #' @export
 roar_size <- function(x) {
   check_bitmap(x)
-  .Call(zro_size, x)
+  (if (is64(x)) .Call(zro64_size, x) else .Call(zro_size, x))
 }

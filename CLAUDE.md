@@ -135,6 +135,11 @@ Grows as stages land; see `.agents/design.md` §4.
   `roar_unserialize()` and the ALTREP `Unserialize` (a `readRDS()`) use it.
 - `src/zro_serial.c`, `R/serial.R`: `roar_serialize()`,
   `roar_unserialize()` and `roar_serial_config()`.
+- `src/zro_bitmap64.c`, `R/wide.R`: the `zuroar64` class on `roaring64`,
+  with its own shell, null check and value parser (canonical decimal
+  text, or doubles below 2^53). Generic R functions branch on `is64(x)`;
+  `check_same()` rejects mixing the widths. `roaring64` iterators are heap
+  objects, freed before any R allocation.
 - `src/zro_info.c`, `R/info.R`: `zuroar_info()`.
 - `src/zro_selftest.c`: an unexported oracle hook, `.Call(zro_selftest, x,
   y, optimize)`, so the build variants test CRoaring before the bindings
@@ -171,6 +176,10 @@ when a stage establishes it.
   and add in `long double`, a plain double on arm64 macOS; and tests
   call `.Call()` only through package functions (`R/hooks.R`), because
   rcnst compares uncompiled `.Call()` arguments with `identical()`.
+- **`match()` and `%in%` go through `mtfrm()`, not ALTREP.** Base R
+  converts a classed table with `mtfrm()`, default `as.character()`.
+  `mtfrm.zuroar()` returns doubles; without it, an exact
+  `as.character()` method makes `match(200000, x)` miss.
 - **An attached bitmap is never modified.** `zro_attach()` is the last
   write; every binding builds a new bitmap (D4). The read cursor in
   `zro_bitmap_t` holds a CRoaring iterator into the containers, and
@@ -199,6 +208,9 @@ when a stage establishes it.
   is an error, not a conversion to a plain vector or a dropped value (D11,
   D12).
 - **No `Imports`.** A runtime dependency needs a design decision first.
+- **A `zuroar64` range that adds more than 2^40 values is refused.**
+  `roaring64` needs a container per 2^16 values; without the guard a
+  large range kills the R process for memory (design §6.1).
 - **CRoaring ignores the offset header** when reading portable bytes; a
   corrupted offset reads the right set, not an error (design §8).
 - **Comments must not name the unsafe deserialiser with parentheses.**

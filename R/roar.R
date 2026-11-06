@@ -86,7 +86,16 @@ change <- function(x, values, from, to, add, no_values) {
     if (missing(from) || missing(to)) {
       zro_abort("zuroar_error", "Give both `from` and `to`.")
     }
+    if (is64(x)) {
+      return(.Call(zro64_change_range, x, check_range64(from, to), add))
+    }
     return(.Call(zro_change_range, x, check_range(from, to), add))
+  }
+  if (is64(x)) {
+    values <- check_values(values, wide = TRUE)
+    return(
+      if (add) .Call(zro64_add, x, values) else .Call(zro64_remove, x, values)
+    )
   }
   values <- check_values(values)
   if (add) .Call(zro_add, x, values) else .Call(zro_remove, x, values)
@@ -99,7 +108,8 @@ change <- function(x, values, from, to, add, no_values) {
 #' every value of `x`.
 #'
 #' @inheritParams roar_add
-#' @param values Whole numbers from 0 to 2^32 - 1.
+#' @param values Whole numbers from 0 to 2^32 - 1; for a `zuroar64`,
+#'   decimal text or doubles below 2^53.
 #' @return A logical vector as long as `values`.
 #' @export
 #' @examples
@@ -107,5 +117,8 @@ change <- function(x, values, from, to, add, no_values) {
 #' roar_contains(x, c(5, 6))
 roar_contains <- function(x, values) {
   check_bitmap(x)
+  if (is64(x)) {
+    return(.Call(zro64_contains, x, check_values(values, wide = TRUE)))
+  }
   .Call(zro_contains, x, check_values(values))
 }

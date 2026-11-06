@@ -9,7 +9,8 @@ roar_contains(x, values)
 \arguments{
 \item{x}{A bitmap.}
 
-\item{values}{Whole numbers from 0 to 2^32 - 1.}
+\item{values}{Whole numbers from 0 to 2^32 - 1; for a \code{zuroar64},
+decimal text or doubles below 2^53.}
 }
 \value{
 A logical vector as long as \code{values}.

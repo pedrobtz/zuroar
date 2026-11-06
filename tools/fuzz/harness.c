@@ -14,7 +14,32 @@
 #include "croaring/roaring.c"
 #include "zro_portable.h"
 
+/* The 64-bit reader: the same contract, on roaring64's portable format. */
+static void fuzz64(const uint8_t *data, size_t size) {
+  size_t used = 0;
+  const char *reason = NULL;
+  roaring64_bitmap_t *r = zro_portable_read64((const char *)data, size, &used, &reason);
+  if (r == NULL) {
+    if (reason == NULL) abort();
+    return;
+  }
+  if (used == 0 || used > size) abort();
+  size_t n = roaring64_bitmap_portable_size_in_bytes(r);
+  char *buf = (char *)malloc(n > 0 ? n : 1);
+  if (buf != NULL) {
+    roaring64_bitmap_portable_serialize(r, buf);
+    size_t used2 = 0;
+    const char *reason2 = NULL;
+    roaring64_bitmap_t *r2 = zro_portable_read64(buf, n, &used2, &reason2);
+    if (r2 == NULL || !roaring64_bitmap_equals(r, r2)) abort();
+    roaring64_bitmap_free(r2);
+    free(buf);
+  }
+  roaring64_bitmap_free(r);
+}
+
 int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
+  fuzz64(data, size);
   size_t used = 0;
   const char *reason = NULL;
   roaring_bitmap_t *r = zro_portable_read((const char *)data, size, &used, &reason);

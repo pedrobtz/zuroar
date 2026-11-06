@@ -4,7 +4,7 @@
 \alias{roar_values}
 \title{Extract a bounded number of values}
 \usage{
-roar_values(x, from = 0, n, type = c("double", "integer"))
+roar_values(x, from = 0, n, type = c("double", "integer", "character"))
 }
 \arguments{
 \item{x}{A bitmap.}
@@ -13,8 +13,10 @@ roar_values(x, from = 0, n, type = c("double", "integer"))
 
 \item{n}{The most values to return: a whole number, or \code{Inf} for all.}
 
-\item{type}{\code{"double"}, the default, or \code{"integer"}, which is an error
-when a returned value is above \code{.Machine$integer.max}.}
+\item{type}{\code{"double"}, the default for a \code{zuroar}, or \code{"integer"},
+which is an error when a returned value is above
+\code{.Machine$integer.max}. For a \code{zuroar64}, \code{"character"}, the default,
+gives decimal text; \code{"double"} is an error at or above 2^53.}
 }
 \value{
 A double or integer vector of at most \code{n} values.

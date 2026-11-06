@@ -24,7 +24,8 @@ roar_contains_range(x, from, to)
 \arguments{
 \item{x}{A bitmap.}
 
-\item{values}{Whole numbers from 0 to 2^32 - 1.}
+\item{values}{Whole numbers from 0 to 2^32 - 1; for a \code{zuroar64},
+decimal text or doubles below 2^53.}
 
 \item{k}{Positions, counting from 1 up to \code{length(x)}.}
 
@@ -33,7 +34,8 @@ roar_contains_range(x, from, to)
 \value{
 \code{roar_rank()} and \code{roar_count()} doubles, \code{roar_select()},
 \code{roar_next()} and \code{roar_prev()} doubles as long as their second
-argument, \code{roar_contains_range()} a single logical.
+argument (decimal text for a \code{zuroar64}), \code{roar_contains_range()} a
+single logical.
 }
 \description{
 A bitmap is sorted, so it answers order questions directly.
