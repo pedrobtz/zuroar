@@ -9,4 +9,8 @@
 library(testthat)
 library(zuroar)
 
+# Record in every check log which CRoaring build and SIMD paths ran
+# (design §7.4).
+str(zuroar_info())
+
 test_check("zuroar")

@@ -457,7 +457,8 @@ force the scalar build with `CPPFLAGS += -DROARING_DISABLE_X64` in
 Three things in the amalgamation would trip `R CMD check`:
 
 1. **Diagnostic pragmas.** `roaring.c` has four `#pragma GCC diagnostic
-   push` blocks and `roaring.h` one, each ignoring `-Wuninitialized` and
+   push` blocks and `roaring.h` two (corrected 2026-11-06 in Stage 1; the
+   RFC counted one), each ignoring `-Wuninitialized` and
    `-Wmaybe-uninitialized`; check's pragma scan reports such lines. The
    one recorded patch in `vendor.yaml` deletes them, and Stage 1 confirms
    that the warnings they hid are absent or false positives.
@@ -466,7 +467,11 @@ Three things in the amalgamation would trip `R CMD check`:
    object. The wrapper unit includes `<stdio.h>` and `<R_ext/Print.h>`,
    then defines `printf` as `Rprintf` before including the amalgamation;
    `zro_roaring.h` does the same for every other file. A patch is the
-   fallback if check still finds the symbol.
+   fallback if check still finds the symbol. *Settled 2026-11-06 (Stage
+   1):* `zro_roaring.h` undefines the macro after `roaring.h` everywhere
+   but the wrapper unit, because left defined it rewrites the
+   `format(printf, ...)` attributes in R's own headers;
+   `tools/check-symbols` confirms no `printf` is linked, so no patch.
 3. **`assert()`.** About 160 calls across the two files. The wrapper
    defines `NDEBUG` before anything includes `<assert.h>`, so they
    compile out with no flag in `Makevars`.
@@ -474,6 +479,22 @@ Three things in the amalgamation would trip `R CMD check`:
 The wrapper also brackets the include with `#pragma GCC visibility
 push(hidden)` and `pop` (R3), registers routines and calls
 `R_useDynamicSymbols(FALSE)`.
+
+*Settled 2026-11-06 (Stage 1):* `zro_roaring.h` includes every system
+header CRoaring uses before the hidden region, because the pragma also
+marks a first-seen extern declaration hidden, which would make libc
+references such as `posix_memalign` hidden. GCC also hides a
+*re*-declaration, and `roaring.c` re-declares `posix_memalign`; the first
+GCC run failed to link ("hidden symbol `posix_memalign' isn't defined").
+`zro_roaring.h` therefore maps the name to a `static inline` forwarder
+defined before its hidden region, so every declaration inside it has
+internal linkage. It also includes `<x86intrin.h>` on every x86-64 build,
+because `roaring.h` does even under `ROARING_DISABLE_X64`, and GCC's
+`<mm_malloc.h>` beneath it declares `posix_memalign` (the scalar build
+failed to link until it did). The pragma is skipped on
+Windows, where symbols resolve per DLL, so there is no session-wide clash
+to prevent. Registration lives in `src/zro_init.c` rather than the
+wrapper unit, so the file that includes `roaring.c` holds nothing else.
 
 ### 7.4 What Stage 1 must prove
 

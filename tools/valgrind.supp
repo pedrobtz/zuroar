@@ -1,0 +1,19 @@
+# Valgrind suppressions for the valgrind leg (native-checks.yaml).
+#
+# cli starts a background ticker thread from its shared object; the thread's
+# TLS block, allocated inside pthread_create(), is still owned by the live
+# thread when R exits, so memcheck reports it as "possibly lost". It is not
+# zuroar memory. Scoped to possible leaks whose stack passes through
+# pthread_create from cli.so, so any leak in zuroar still fails the leg.
+# Drop it once pedrobtz/r-actions#74 (CLI_NO_THREAD on the leg) is fixed.
+{
+   cli-ticker-thread-tls
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:calloc
+   ...
+   fun:_dl_allocate_tls
+   ...
+   fun:pthread_create*
+   obj:*/cli/libs/cli.so
+}

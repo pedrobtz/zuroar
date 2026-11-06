@@ -1,0 +1,112 @@
+--- a/roaring.c
++++ b/roaring.c
+@@ -336,9 +336,6 @@
+ #endif
+ 
+ #if defined(__GNUC__) && !defined(__clang__)
+-#pragma GCC diagnostic push
+-#pragma GCC diagnostic ignored "-Wuninitialized"
+-#pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
+ #endif
+ #ifdef __cplusplus
+ using namespace ::roaring::internal;
+@@ -2960,7 +2957,6 @@
+ }  // extern "C" { namespace roaring { namespace internal {
+ #endif
+ #if defined(__GNUC__) && !defined(__clang__)
+-#pragma GCC diagnostic pop
+ #endif/* end file src/array_util.c */
+ /* begin file src/art/art.c */
+ #include <assert.h>
+@@ -5879,9 +5875,6 @@
+ #endif  // CROARING_COMPILER_SUPPORTS_AVX512
+ #endif
+ #if defined(__GNUC__) && !defined(__clang__)
+-#pragma GCC diagnostic push
+-#pragma GCC diagnostic ignored "-Wuninitialized"
+-#pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
+ #endif
+ #ifdef __cplusplus
+ using namespace ::roaring::internal;
+@@ -7166,7 +7159,6 @@
+ }  // extern "C" { namespace roaring { namespace api {
+ #endif
+ #if defined(__GNUC__) && !defined(__clang__)
+-#pragma GCC diagnostic pop
+ #endif
+ /* end file src/bitset_util.c */
+ /* begin file src/containers/array.c */
+@@ -7826,9 +7818,6 @@
+ #endif
+ 
+ #if defined(__GNUC__) && !defined(__clang__)
+-#pragma GCC diagnostic push
+-#pragma GCC diagnostic ignored "-Wuninitialized"
+-#pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
+ #endif
+ #ifdef __cplusplus
+ extern "C" {
+@@ -9157,7 +9146,6 @@
+ } } }  // extern "C" { namespace roaring { namespace internal {
+ #endif
+ #if defined(__GNUC__) && !defined(__clang__)
+-#pragma GCC diagnostic pop
+ #endif/* end file src/containers/bitset.c */
+ /* begin file src/containers/containers.c */
+ 
+@@ -12993,9 +12981,6 @@
+ #endif  // CROARING_COMPILER_SUPPORTS_AVX512
+ #endif
+ #if defined(__GNUC__) && !defined(__clang__)
+-#pragma GCC diagnostic push
+-#pragma GCC diagnostic ignored "-Wuninitialized"
+-#pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
+ #endif
+ #ifdef __cplusplus
+ extern "C" {
+@@ -14119,7 +14104,6 @@
+ }  // extern "C" { namespace roaring { namespace internal {
+ #endif
+ #if defined(__GNUC__) && !defined(__clang__)
+-#pragma GCC diagnostic pop
+ #endif/* end file src/containers/run.c */
+ /* begin file src/isadetection.c */
+ 
+--- a/roaring.h
++++ b/roaring.h
+@@ -1599,9 +1599,6 @@
+ #endif  // CROARING_COMPILER_SUPPORTS_AVX512
+ #endif
+ #if defined(__GNUC__) && !defined(__clang__)
+-#pragma GCC diagnostic push
+-#pragma GCC diagnostic ignored "-Wuninitialized"
+-#pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
+ #endif
+ #ifdef __cplusplus
+ extern "C" {
+@@ -1954,7 +1951,6 @@
+ }  // extern "C" { namespace roaring { namespace internal {
+ #endif
+ #if defined(__GNUC__) && !defined(__clang__)
+-#pragma GCC diagnostic pop
+ #endif
+ #endif
+ /* end file include/roaring/array_util.h */
+@@ -1984,9 +1980,6 @@
+ #endif  // CROARING_COMPILER_SUPPORTS_AVX512
+ #endif
+ #if defined(__GNUC__) && !defined(__clang__)
+-#pragma GCC diagnostic push
+-#pragma GCC diagnostic ignored "-Wuninitialized"
+-#pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
+ #endif
+ #ifdef __cplusplus
+ extern "C" {
+@@ -2722,7 +2715,6 @@
+ }  // extern "C" { namespace roaring { namespace internal
+ #endif
+ #if defined(__GNUC__) && !defined(__clang__)
+-#pragma GCC diagnostic pop
+ #endif
+ #endif
+ /* end file include/roaring/bitset_util.h */

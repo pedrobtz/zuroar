@@ -27,7 +27,7 @@ Authors:
 
 Other contributors:
 \itemize{
-  \item The CRoaring authors (the bundled CRoaring library) [copyright holder]
+  \item The CRoaring authors (CRoaring, bundled in src/croaring; see inst/COPYRIGHTS) [copyright holder]
 }
 
 }
