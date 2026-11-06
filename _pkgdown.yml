@@ -2,3 +2,44 @@ url: https://pedrobtz.github.io/zuroar/
 template:
   bootstrap: 5
 
+reference:
+  - title: Build a bitmap
+    contents:
+      - roar
+      - roar64
+      - roar_add
+  - title: A bitmap as a sorted vector
+    contents:
+      - zuroar-vector
+      - zuroar-index
+      - c.zuroar
+  - title: Queries
+    contents:
+      - roar_contains
+      - roar_rank
+      - roar_values
+      - roar64_length
+  - title: Set algebra
+    contents:
+      - zuroar-ops
+      - roar_union
+      - roar_cardinality
+      - roar_shift
+  - title: Storage and bytes
+    contents:
+      - roar_optimize
+      - roar_serialize
+      - roar_serial_config
+  - title: The build
+    contents:
+      - zuroar_info
+  - title: Conditions
+    contents:
+      - zuroar-conditions
+
+articles:
+  - title: Articles
+    navbar: ~
+    contents:
+      - zuroar
+      - articles/benchmarks

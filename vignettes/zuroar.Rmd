@@ -8,9 +8,7 @@ vignette: >
 ---
 
 ```{r, include = FALSE}
-# Not evaluated: written from .agents/design.md before the API exists.
-# Switch eval on, and check the output, once the functions are in.
-knitr::opts_chunk$set(collapse = TRUE, comment = "#>", eval = FALSE)
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
 ```
 
 zuroar gives R compressed sets of whole numbers from 0 to 2^32 - 1, or to
@@ -45,9 +43,7 @@ positions start at 1, `[` returns a bitmap and `[[` a single value.
 
 ```{r}
 length(x)
-#> [1] 4
 x[[2]]
-#> [1] 7
 x[2:3]
 head(y, 3)
 c(x, roar(42L)) + 10
@@ -61,15 +57,10 @@ the `k`-th smallest, and `roar_next()` the nearest value above.
 
 ```{r}
 roar_contains(x, c(5L, 6L))
-#> [1] FALSE FALSE
 roar_count(y, from = 10, to = 20)
-#> [1] 1
 roar_rank(x, 9L)
-#> [1] 3
 roar_select(x, c(1, 2))
-#> [1] 1 7
 roar_next(x, 8L)
-#> [1] 9
 ```
 
 ## Combine sets
@@ -87,19 +78,45 @@ roar_jaccard(x, y)
 
 ## Save and share
 
-`roar_serialize()` writes the portable format as a raw vector, and
-`roar_unserialize()` checks bytes before reading them. A bitmap doesn't
-survive `saveRDS()` on its own; `roar_serial_config()` lets it travel to
-mirai workers.
+A bitmap survives `saveRDS()` and `readRDS()` like any R object, stored
+compressed:
+
+```{r}
+path <- tempfile(fileext = ".rds")
+saveRDS(y, path)
+readRDS(path) == y
+```
+
+`roar_serialize()` writes the portable Roaring format as a raw vector,
+for other programs and other Roaring libraries, and `roar_unserialize()`
+checks bytes before reading them.
 
 ```{r}
 b <- roar_serialize(x)
 x2 <- roar_unserialize(b)
-mirai::daemons(2, serial = roar_serial_config())
+x2 == x
+```
+
+Bitmaps are sent to and from `mirai` workers like any other value. The
+64-bit class, `roar64()`, needs `roar_serial_config()` for that; the
+32-bit one works with or without it.
+
+```{r, include = FALSE}
+# A daemon is a fresh R process: hand it this session's library paths, so
+# it finds the zuroar being documented.
+Sys.setenv(R_LIBS = paste(.libPaths(), collapse = .Platform$path.sep))
+```
+
+```{r, eval = requireNamespace("mirai", quietly = TRUE)}
+mirai::daemons(1)
+m <- mirai::mirai(zuroar::roar_add(x, 8), x = x)
+mirai::call_mirai(m)$data
+mirai::daemons(0)
 ```
 
 ## Next
 
 The reference index documents every function, including the 64-bit
-class, `roar64()`. An article with benchmarks against base R and the bit
-package is planned.
+class, `roar64()`. The
+[benchmarks article](https://pedrobtz.github.io/zuroar/articles/benchmarks.html)
+measures time and memory against base R and the bit package.

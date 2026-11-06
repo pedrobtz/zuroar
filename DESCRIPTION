@@ -25,7 +25,7 @@ Suggests:
     pillar,
     testthat (>= 3.0.0),
     withr
-Config/Needs/website: knitr, rmarkdown
+Config/Needs/website: bench, bit, knitr, rmarkdown
 Config/testthat/edition: 3
 Encoding: UTF-8
 Language: en-GB

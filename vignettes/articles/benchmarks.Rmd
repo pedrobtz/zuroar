@@ -1,0 +1,147 @@
+---
+title: "Benchmarks"
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
+```
+
+This article measures zuroar against two other ways of keeping a set of
+whole numbers in R: a plain integer vector with base R's `union()`,
+`intersect()` and `%in%`, and a bit vector from the
+[bit](https://cran.r-project.org/package=bit) package. Every number below
+is measured when the site is built, on whatever machine builds it, so
+read the tables for their shape rather than their exact values.
+
+```{r setup, message = FALSE}
+library(zuroar)
+library(bit)
+library(bench)
+```
+
+## The sets
+
+Values are drawn from 0 to 10 million minus one. A bit vector needs that
+whole universe up front; it stores value `v` at position `v + 1`. Three
+kinds of set show where each representation is strong:
+
+* **dense**: half of the universe, chosen at random;
+* **sparse**: one value in a thousand, chosen at random;
+* **runs**: twenty long stretches of consecutive values.
+
+```{r}
+set.seed(2026)
+universe <- 1e7
+sets <- list(
+  dense = sort(sample(universe, universe / 2) - 1L),
+  sparse = sort(sample(universe, universe / 1000) - 1L),
+  runs = sort(unique(unlist(lapply(
+    seq(0, universe - 400000, length.out = 20),
+    function(start) as.integer(start) + 0:199999
+  ))))
+)
+lengths(sets)
+
+as_bit <- function(v) {
+  b <- bit(universe)
+  b[v + 1L] <- TRUE
+  b
+}
+```
+
+## Memory
+
+The size of each representation of the first set of each pair. For
+zuroar, `roar_stats()` reports the bytes CRoaring's containers allocate.
+`object.size()` of a bitmap reports what it would take expanded, eight
+bytes a value, because R sees a vector of that length.
+
+```{r}
+memory <- do.call(rbind, lapply(names(sets), function(name) {
+  v <- sets[[name]]
+  data.frame(
+    set = name,
+    values = length(v),
+    integer_vector = as.numeric(object.size(v)),
+    bit = as.numeric(object.size(as_bit(v))),
+    zuroar = sum(roar_stats(roar(v))$bytes)
+  )
+}))
+memory
+```
+
+## Operations
+
+Each benchmark pairs a set with another of the same kind, drawn the same
+way. Inputs are built before timing, so only the operation is measured:
+the union and the intersection, each returning a new set, and a
+membership test of 10,000 values. `mem_alloc` counts only memory R
+allocates; CRoaring allocates its containers with C's `malloc()`, which
+bench does not see, so zuroar's column understates its memory. The
+memory table above is the fair comparison of sizes.
+
+```{r}
+other <- list(
+  dense = sort(sample(universe, universe / 2) - 1L),
+  sparse = sort(sample(universe, universe / 1000) - 1L),
+  runs = sets$runs + 100000L
+)
+probe <- sample(universe, 10000) - 1L
+
+run <- function(name) {
+  a <- sets[[name]]
+  b <- other[[name]]
+  ra <- roar(a)
+  rb <- roar(b)
+  ba <- as_bit(a)
+  bb <- as_bit(b)
+  marks <- bench::mark(
+    `union: base` = union(a, b),
+    `union: bit` = ba | bb,
+    `union: zuroar` = ra | rb,
+    `intersect: base` = intersect(a, b),
+    `intersect: bit` = ba & bb,
+    `intersect: zuroar` = ra & rb,
+    `member: base` = probe %in% a,
+    `member: bit` = ba[probe + 1L],
+    `member: zuroar` = roar_contains(ra, probe),
+    check = FALSE,
+    filter_gc = FALSE,
+    min_iterations = 5,
+    time_unit = "ms"
+  )
+  data.frame(
+    set = name,
+    expression = as.character(marks$expression),
+    median_ms = round(as.numeric(marks$median), 3),
+    mem_alloc = format(marks$mem_alloc)
+  )
+}
+```
+
+```{r}
+run("dense")
+```
+
+```{r}
+run("sparse")
+```
+
+```{r}
+run("runs")
+```
+
+## Reading the results
+
+A bit vector is a fixed array of one bit per possible value, so its
+memory and its union and intersection cost depend on the universe, not on
+the set. It does well on dense sets and pays the whole universe for
+sparse ones. A plain integer vector pays four bytes a value, and base
+R's set functions hash their inputs on every call. zuroar's containers
+adapt to each chunk of 65,536 values, so its size follows the set's
+structure: a few hundred bytes for millions of values in long runs,
+about two bytes a value for sparse chunks, and a fixed 8 KiB for each
+dense chunk of 65,536 values.
+
+The tables, not this text, say which is faster on the machine that built
+this page.
