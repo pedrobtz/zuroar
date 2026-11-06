@@ -5,6 +5,7 @@
 # thread when R exits, so memcheck reports it as "possibly lost". It is not
 # zuroar memory. Scoped to possible leaks whose stack passes through
 # pthread_create from cli.so, so any leak in zuroar still fails the leg.
+# Drop it once pedrobtz/r-actions#74 (CLI_NO_THREAD on the leg) is fixed.
 {
    cli-ticker-thread-tls
    Memcheck:Leak
