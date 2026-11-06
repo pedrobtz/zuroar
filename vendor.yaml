@@ -1,0 +1,17 @@
+# Vendored third-party code. Stage 1 copies the files below into
+# src/croaring/ and verifies them against these pins.
+croaring:
+  upstream: https://github.com/RoaringBitmap/CRoaring
+  tag: v5.4.0
+  commit: 20495fec4d1622b93284033a160f67d21a5aa8bb
+  released: 2026-10-26
+  licence: MIT (the MIT side of the Apache-2.0/MIT dual licence; design D9)
+  source: release assets of tag v5.4.0, the amalgamation.sh output
+  files:
+    roaring.c:
+      sha256: cdbd007b635b9bb2dc2074c69cb9f768e8aaf2dbe68f622c8643689b4e975dbc
+    roaring.h:
+      sha256: b74054da2965baa17393c5ffa02bea587374fe33afcfff2c2d24dcf75fed419b
+  # Local patches, applied in order. Stage 1 adds the one that deletes
+  # the diagnostic pragmas (design §7.3).
+  patches: []

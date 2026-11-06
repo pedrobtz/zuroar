@@ -26,9 +26,10 @@ and Q5 are still open.
 
 ## Current state
 
-Scaffolded 2026-11-01 with `create-pkg.sh` (C, `use_c()`); no functionality
-yet. `DESCRIPTION` still carries the scaffold's title, description and
-author. The roadmap in `.agents/roadmap.md` takes it to v0.1.0.
+Scaffolded 2026-11-01 with `create-pkg.sh` (C, `use_c()`). Stage 0 gave it
+its identity on 2026-11-06: real `DESCRIPTION`, `vendor.yaml` pins and CI.
+No functionality yet. The roadmap in `.agents/roadmap.md` takes it to
+v0.1.0.
 
 ## Stage tracking
 
@@ -87,8 +88,8 @@ air format .                                     # format R sources
 ## Architecture
 
 To be written as stages land; see `.agents/design.md` §4. The scaffold set
-up a C native layer through `usethis::use_c()`: `src/zuroar.c` holds only the
-R headers, and `R/zuroar-package.R` carries `@useDynLib zuroar,
+up a C native layer through `usethis::use_c()`: `src/zuroar.c` holds
+`R_init_zuroar()`, which registers routines and disables symbol search, and `R/zuroar-package.R` carries `@useDynLib zuroar,
 .registration = TRUE`.
 
 ## Invariants that are easy to break
