@@ -664,9 +664,11 @@ any of them.
 - **Q3. Settled 2026-11-02 by D13.** A logical vector would fix a
   1-based meaning on a 0-based domain; `roar(which(l))` says it
   explicitly.
-- **Q4.** Does any CRAN flavour's compiler mishandle the AVX-512 target
-  regions? If so, `CROARING_COMPILER_SUPPORTS_AVX512=0` is a narrower
-  fallback than D3's.
+- **Q4. Settled 2026-11-06 by Stage 1's full run.** No: AVX-512 code
+  compiled and ran on gcc16, clang23, ubuntu-clang, Rtools (Windows
+  release and devel, whose runners had AVX-512 at run time) and macOS, with
+  no NOTE. `CROARING_COMPILER_SUPPORTS_AVX512=0` stays the narrower
+  fallback should a CRAN flavour object later.
 - **Q5.** Is v0.1.0 a CRAN submission before a sibling uses it? The
   board's `CRAN intent` records it.
 

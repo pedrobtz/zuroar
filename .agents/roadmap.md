@@ -22,7 +22,7 @@ external pointers and finalisers.
 | --- | --- | --- | --- | --- | --- |
 | 0 | [Package identity](#stage-0--package-identity) | quick | [#2](https://github.com/pedrobtz/zuroar/issues/2) | [#15](https://github.com/pedrobtz/zuroar/pull/15) | 2026-11-06 |
 | 1 | [Vendored CRoaring](#stage-1--vendored-croaring) | full | [#3](https://github.com/pedrobtz/zuroar/issues/3) | [#16](https://github.com/pedrobtz/zuroar/pull/16) | 2026-11-06 |
-| 2 | [The zuroar class](#stage-2--the-zuroar-class) | full | [#4](https://github.com/pedrobtz/zuroar/issues/4) | | |
+| 2 | [The zuroar class](#stage-2--the-zuroar-class) | full | [#4](https://github.com/pedrobtz/zuroar/issues/4) | | 2026-11-06 |
 | 3 | [Set algebra](#stage-3--set-algebra) | quick | [#5](https://github.com/pedrobtz/zuroar/issues/5) | | |
 | 4 | [Rank, select and ranges](#stage-4--rank-select-and-ranges) | quick | [#6](https://github.com/pedrobtz/zuroar/issues/6) | | |
 | 5 | [Portable serialisation](#stage-5--portable-serialisation) | full | [#7](https://github.com/pedrobtz/zuroar/issues/7) | | |
@@ -104,7 +104,9 @@ NOTE, and `zuroar_info()` reports what was compiled and what runs.
 
 - A full-profile r-actions run is green with no NOTE on any leg, including
   the r-devel Debian clang and GCC containers and Windows Rtools.
-- Every CI log records `zuroar_info()` output.
+- Every CI log records `zuroar_info()` output. *Deviation 2026-11-06:*
+  every runner leg and the build variants print it; the R-hub container
+  jobs show test output only on failure, so theirs do not.
 - The sanitizer and valgrind legs are clean, and the valgrind leg's
   `zuroar_info()` shows AVX-512 off.
 - The three builds pass the same tests.
@@ -403,9 +405,9 @@ From design §2, in the order expected:
 
 Q1 and Q3 were settled on 2026-11-02 by design D5 and D13.
 
-- **Q4** (Stage 1). Does any CRAN flavour's compiler mishandle the AVX-512
-  target regions? Stage 1's full run answers it; the narrower fallback is
-  `CROARING_COMPILER_SUPPORTS_AVX512=0`.
+- **Q4. Settled 2026-11-06 by Stage 1's full run** (#16): no leg's
+  compiler mishandles the AVX-512 target regions (gcc16, clang23,
+  ubuntu-clang, Rtools on Windows release and devel, macOS clang).
 - **Q2** (after 0.1.0). Header and C table, or a second vendored copy in
   `zutable`? Blocks no stage.
 - **Q5** (Stage 9). Is v0.1.0 a CRAN submission before a sibling uses it?

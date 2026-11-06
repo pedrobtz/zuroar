@@ -21,7 +21,7 @@ library (every set operation is CRoaring's) and, in v0.1.0, not a C API.
 The specification is [`.agents/design.md`](.agents/design.md), adopted from
 [RFC 0061](https://github.com/pedrobtz/packages/blob/main/rfcs/started/0061-zuroar-roaring-bitmaps.md).
 It outranks this file: `CLAUDE.md` orients, the design doc decides. Its
-decisions D1 to D16 are the maintainer's to overturn; open questions Q2, Q4
+decisions D1 to D16 are the maintainer's to overturn; open questions Q2
 and Q5 are still open.
 
 ## Current state
