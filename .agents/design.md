@@ -266,7 +266,11 @@ has an R form here or is left out for a stated reason.
 The 32-bit domain is 0 to 2^32 - 1. Input is an integer vector with no
 `NA` or negative value, or a double vector of whole numbers in the
 domain; anything else is a `zuroar_error_value` naming the first
-offending position. Duplicates and order do not matter.
+offending position. Duplicates and order do not matter. This holds for
+every argument that takes values, `roar_contains()` included: a value
+outside the domain is an error there too, not `FALSE` (settled
+2026-11-06, Stage 2). `roar_range(from, to)` with `from > to` is an
+error rather than an empty bitmap.
 
 `as.integer()` and `roar_values()` error rather than produce `NA` above
 `.Machine$integer.max`; `as.double()` and `type = "double"` are exact
@@ -278,7 +282,11 @@ when every value is below 2^53. Mixing `zuroar` and `zuroar64` in one
 operation is an error; `roar64(x)` promotes explicitly.
 
 Counts are doubles: `length()`, `roar_count()`, `roar_rank()`,
-`roar_cardinality()` and `match()` positions. A 32-bit count is at most
+`roar_cardinality()` and `match()` positions. *Amended 2026-11-06
+(Stage 2):* R's `length()` dispatch converts a method's double result
+to integer whenever it fits, as for any long vector, so `length(x)` is
+an integer up to `.Machine$integer.max` and a double above it; the other
+counts stay doubles. A 32-bit count is at most
 2^32 and always exact. A `zuroar64` count above 2^53 is a
 `zuroar_error_value` rather than an inexact double (D2, D14);
 `roar64_length(x)` returns the exact cardinality as decimal text for
@@ -374,6 +382,19 @@ kept compressed (D11). Positions count from 1 and are doubles, since a
 
 - **`length(x)`** is the cardinality, so `seq_along(x)` and
   `seq_len(length(x))` work.
+- **`min()`, `max()` and `range()`** read the ends. *Settled 2026-11-06
+  (Stage 2):* on an empty bitmap they are a `zuroar_error_value` rather
+  than base R's `Inf` with a warning, which would put a value outside
+  the domain in the result (D2). They take one bitmap; `min(x, y)` is a
+  `zuroar_error_unsupported` pointing to `c()`, as are `sum()`, `prod()`,
+  `any()` and `all()`.
+- **`format()` and `print()`** never fail. *Settled 2026-11-06 (Stage
+  2):* a null-pointer bitmap prints as one, because R, testthat and rlang
+  format objects while handling a condition. For the same reason the
+  package registers `pillar::type_sum()` for the class (lazily; `pillar`
+  joins `Suggests`): rlang's backtraces describe every object in a call
+  through it, and its default calls `length()`, which on a null pointer
+  would signal again inside the handler.
 - **`x[i]`** returns a bitmap of the values at positions `i`, as `[`
   keeps the class of a `Date`. Positive positions select, negative ones
   exclude, as in R; mixing signs, `NA` or a position past the end is a
