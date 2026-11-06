@@ -1,0 +1,54 @@
+zuroar bundles CRoaring 5.4.0 (https://github.com/RoaringBitmap/CRoaring,
+tag v5.4.0, commit 20495fec4d1622b93284033a160f67d21a5aa8bb) in
+src/croaring/: the roaring.c and roaring.h amalgamation, with one local
+patch listed in vendor.yaml in the source repository.
+
+CRoaring is dual-licensed under the Apache License 2.0 and the MIT licence.
+zuroar uses it under the MIT licence:
+
+MIT License
+
+Copyright 2016-2022 The CRoaring authors
+
+Permission is hereby granted, free of charge, to any
+person obtaining a copy of this software and associated
+documentation files (the "Software"), to deal in the
+Software without restriction, including without
+limitation the rights to use, copy, modify, merge,
+publish, distribute, sublicense, and/or sell copies of
+the Software, and to permit persons to whom the Software
+is furnished to do so, subject to the following
+conditions:
+
+The above copyright notice and this permission notice
+shall be included in all copies or substantial portions
+of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF
+ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED
+TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A
+PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT
+SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
+CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR
+IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+DEALINGS IN THE SOFTWARE.
+
+The CRoaring authors, from its AUTHORS file:
+
+Tom Cornebize
+Luca Deri
+Jacob Evans
+Owen Kaser
+Nathan Kurz
+Daniel Lemire
+Wojciech Muła
+Chris O'Hara
+François Saint-Jacques
+Gregory Ssi-Yan-Kai
+Andrei Gudkov
+Guillaume Holley
+Brian Esch
+
+The full upstream LICENSE, including the Apache License 2.0 text, is
+src/croaring/LICENSE in the package sources.

@@ -16,3 +16,4 @@
 ^pkgdown$
 ^\.worktrees$
 ^vendor\.yaml$
+^tools$

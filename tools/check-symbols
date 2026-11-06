@@ -1,0 +1,43 @@
+#!/bin/sh
+# Fail if the built objects reference symbols CRAN's compiled-code check
+# objects to (stdio output, abort/exit, the system RNG), or if the shared
+# object exports any CRoaring symbol. Run after R CMD INSTALL from the
+# package root, so src/*.o and the shared object are present.
+#
+#   tools/check-symbols [shared-object]    default: src/zuroar.so
+set -eu
+
+SO=${1:-src/zuroar.so}
+[ -f "$SO" ] || { echo "missing $SO; build the package first" >&2; exit 1; }
+
+FORBIDDEN='^(printf|vprintf|puts|putchar|fprintf|vfprintf|fputs|fputc|fwrite|perror|stdout|stderr|__printf_chk|__fprintf_chk|__vfprintf_chk|__vprintf_chk|abort|exit|_exit|_Exit|rand|srand|random|srandom|rand_r|drand48|lrand48)$'
+
+# Names only, without the Mach-O leading underscore or glibc versions.
+names() { awk '{print $NF}' | sed -e 's/@.*$//' -e 's/^_\([A-Za-z]\)/\1/'; }
+
+status=0
+
+found=$(for f in src/*.o "$SO"; do nm -u "$f" 2>/dev/null; done | names | sort -u | grep -E "$FORBIDDEN" || true)
+if [ -n "$found" ]; then
+  echo "FAIL: forbidden symbols referenced:" >&2
+  printf '  %s\n' $found >&2
+  status=1
+else
+  echo "==> no forbidden symbols referenced"
+fi
+
+if [ "$(uname -s)" = Darwin ]; then
+  exported=$(nm -g -U "$SO" | names)
+else
+  exported=$(nm -D --defined-only "$SO" | names)
+fi
+leaked=$(printf '%s\n' "$exported" | grep -E '^(c?roaring|ra_|art_|container_|array_container|bitset_container|run_container)' || true)
+if [ -n "$leaked" ]; then
+  echo "FAIL: CRoaring symbols exported from $SO:" >&2
+  printf '  %s\n' $leaked | head -20 >&2
+  status=1
+else
+  echo "==> exported: $(printf '%s ' $exported)"
+fi
+
+exit $status

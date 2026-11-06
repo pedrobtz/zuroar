@@ -1,0 +1,25 @@
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+
+name: vendor
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.run_id }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+# src/croaring/ must be CRoaring as pinned in vendor.yaml plus exactly the
+# patches it lists, and a pull request that changes it must change
+# vendor.yaml too.
+jobs:
+  vendor:
+    uses: pedrobtz/r-actions/.github/workflows/vendor.yml@v1
+    with:
+      vendor-dir: src/croaring
+      verify: tools/verify-vendor
+      must-update: |
+        vendor.yaml

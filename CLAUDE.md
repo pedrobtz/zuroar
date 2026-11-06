@@ -87,10 +87,23 @@ air format .                                     # format R sources
 
 ## Architecture
 
-To be written as stages land; see `.agents/design.md` §4. The scaffold set
-up a C native layer through `usethis::use_c()`: `src/zuroar.c` holds
-`R_init_zuroar()`, which registers routines and disables symbol search, and `R/zuroar-package.R` carries `@useDynLib zuroar,
-.registration = TRUE`.
+Grows as stages land; see `.agents/design.md` §4.
+
+- `src/croaring/`: CRoaring's `roaring.c` and `roaring.h`, upstream plus
+  one patch. R compiles only top-level `src/*.c`, so nothing here builds
+  on its own.
+- `src/zro_roaring.h`: the only way first-party C includes CRoaring. It
+  sets `NDEBUG`, includes every system header CRoaring uses, defines
+  `printf` as `Rprintf` while `roaring.h` is parsed, and hides CRoaring's
+  declarations.
+- `src/zro_roaring.c`: the wrapper unit, the only includer of `roaring.c`.
+- `src/zro_init.c`, `src/zro_init.h`: routine registration and the
+  `.Call` prototypes.
+- `src/zro_info.c`, `R/info.R`: `zuroar_info()`.
+- `src/zro_selftest.c`: an unexported oracle hook, `.Call(zro_selftest, x,
+  y, optimize)`, so the build variants test CRoaring before the bindings
+  exist.
+- `R/zuroar-package.R` carries `@useDynLib zuroar, .registration = TRUE`.
 
 ## Invariants that are easy to break
 
@@ -129,6 +142,12 @@ when a stage establishes it.
   is an error, not a conversion to a plain vector or a dropped value (D11,
   D12).
 - **No `Imports`.** A runtime dependency needs a design decision first.
+- **Include CRoaring only through `zro_roaring.h`, and R headers after
+  it.** It must include each system header CRoaring uses before the hidden
+  region. Under `#pragma GCC visibility push(hidden)`, a libc declaration
+  seen for the first time would be marked hidden too. `printf` is
+  undefined again after `roaring.h`, except in the wrapper unit; left
+  defined, it rewrites the `format(printf, ...)` attributes in R's headers.
 
 ## Testing conventions
 
@@ -200,8 +219,13 @@ of writing bespoke ones, and pin a released tag rather than `main`. Pin a
 workflow that holds a write token, such as `coverage.yml`, to a commit, with
 the tag in a comment. The `R-CMD-check` workflow must call `r-cmd-check.yml`,
 because a hand-rolled one does not count as the pre-submission check. This
-package calls `r-cmd-check.yml@v1` and `coverage.yml@v1`; `pkgdown.yaml` is
-the r-lib example workflow.
+package calls `r-cmd-check.yml@v1`; `coverage.yml` and `vendor-upstream.yml`
+(write tokens) pinned to the `v1` commit; `native-checks.yaml` (sanitizers,
+valgrind, LTO, rchk, analyzers, cran-special), `gctorture.yaml` and
+`vendor.yaml` at `@v1`. `build-variants.yaml` is the package's own
+development-only job (design §7.4): it builds the default, no-AVX-512 and
+scalar variants, runs `tools/check-symbols` and the tests on each.
+`pkgdown.yaml` is the r-lib example workflow.
 
 Small edits get a small run. The shared workflows look at the files a pull
 request changes, compared with its merge base:
@@ -242,22 +266,43 @@ main thing slowing roadmaps down, so:
 CRoaring 5.4.0 (tag `v5.4.0`, commit
 `20495fec4d1622b93284033a160f67d21a5aa8bb`), the `roaring.c` and `roaring.h`
 amalgamation, used under the MIT side of its Apache-2.0/MIT dual licence
-(D9). The design places it in `src/croaring/` with pins and checksums in
-`vendor.yaml`, and plans one patch (deleting the diagnostic pragmas),
-`printf` redefined as `Rprintf` and `NDEBUG` set in the wrapper unit (design
-§7.3). The rest of this section is to fill in when Stage 1 vendors it.
+(D9). Vendored in Stage 1.
+
+- **Layout.** `src/croaring/` holds `roaring.c`, `roaring.h`, upstream
+  `LICENSE` and `AUTHORS`. `inst/COPYRIGHTS` and the `cph` entry in
+  `DESCRIPTION` declare it.
+- **Pins.** `vendor.yaml` (not `src/vendor/PROVENANCE`) records the tag,
+  the commit, the SHA-256 of all four files, and the patch series, with the
+  update procedure in its header comment.
+- **The one patch.** `tools/patches/0001-remove-diagnostic-pragmas.patch`
+  deletes the six `#pragma GCC diagnostic` blocks, four in `roaring.c` and
+  two in `roaring.h`. `printf` is handled by the macro in `zro_roaring.h`
+  instead of a patch; `tools/check-symbols` proves no `printf` is linked.
+- **Verification.** `tools/verify-vendor` derives the tree from upstream
+  plus the patches and compares it byte for byte. `--canary` must fail,
+  and `--write` re-derives the tree for a bump. The `vendor` workflow runs
+  it on every push and requires a change to `src/croaring/` to change
+  `vendor.yaml` too. `vendor-upstream` opens an issue weekly when CRoaring
+  releases.
+- **Symbols.** `tools/check-symbols` runs after each build variant in the
+  `build-variants` workflow. It fails on stdio, `abort`, `exit` or RNG
+  references and on any exported CRoaring symbol.
+- `tools/`, `vendor.yaml` and the patches are build-ignored; the tarball
+  ships only the patched result.
+
+General rules for vendored code:
 
 - Pin a stable upstream release, never `master` or a release candidate.
 - Record the tag, the commit and the checksums, and write down the update
   procedure so the next bump is mechanical.
-- Keep upstream `LICENSE` and `NOTICE` under `src/vendor/<lib>/`, declare the
+- Keep upstream `LICENSE` and `NOTICE` beside the vendored code, declare the
   vendored code in `DESCRIPTION` and `inst/COPYRIGHTS`.
 - Keep the vendor tree clearly separated from first-party source, and record
   every local patch and why it exists.
 - **CRAN's compiled-code check applies to vendored code too.** No `stdout` or
   `stderr`, no `printf`, `abort`, `exit` or system RNG may be linked, even
   behind a debug switch that never runs. Remove them with a patch in
-  `tools/patches/`, list it in `src/vendor/PROVENANCE`, and make the
+  `tools/patches/`, list it in `vendor.yaml`, and make the
   vendor-verify script check "upstream plus exactly these patches". Avoid
   diagnostic-suppressing pragmas too, because they draw their own NOTE. zuhtml
   is the reference: `tools/patches/0002-no-stdio.patch` and

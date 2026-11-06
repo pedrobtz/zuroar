@@ -1,0 +1,75 @@
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+  workflow_dispatch:
+
+name: build-variants
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.run_id }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+# Development only (design §7.4). Builds CRoaring three ways and runs the
+# same test suite on each: the default runtime dispatch, no AVX-512, and the
+# scalar build. Whether a runner has AVX-512 is not ours to choose, so the
+# scalar build is the oracle for the dispatched ones. Each build then goes
+# through tools/check-symbols: no stdio, abort, exit or system RNG
+# reference, and no CRoaring symbol exported.
+jobs:
+  build:
+    name: ${{ matrix.os }} (${{ matrix.variant }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - {os: ubuntu-latest, variant: default, cppflags: ""}
+          - {os: ubuntu-latest, variant: no-avx512, cppflags: "-DCROARING_COMPILER_SUPPORTS_AVX512=0"}
+          - {os: ubuntu-latest, variant: scalar, cppflags: "-DROARING_DISABLE_X64=1 -DDISABLENEON=1", scalar: "1"}
+          - {os: macos-latest, variant: default, cppflags: ""}
+          - {os: macos-latest, variant: scalar, cppflags: "-DROARING_DISABLE_X64=1 -DDISABLENEON=1", scalar: "1"}
+    env:
+      ZUROAR_SCALAR_BUILD: ${{ matrix.scalar }}
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          use-public-rspm: true
+
+      - uses: r-lib/actions/setup-r-dependencies@v2
+        with:
+          extra-packages: any::testthat, any::withr
+          dependencies: '"hard"'
+
+      - name: Build and install
+        shell: bash
+        run: |
+          set -eu
+          printf 'CPPFLAGS += %s\n' "${{ matrix.cppflags }}" > "$RUNNER_TEMP/Makevars"
+          cat "$RUNNER_TEMP/Makevars"
+          mkdir -p "$RUNNER_TEMP/lib"
+          R_MAKEVARS_USER="$RUNNER_TEMP/Makevars" \
+            R CMD INSTALL --preclean --no-test-load -l "$RUNNER_TEMP/lib" .
+
+      - name: Check symbols
+        shell: bash
+        run: tools/check-symbols
+
+      - name: Test
+        shell: Rscript {0}
+        run: |
+          .libPaths(c(file.path(Sys.getenv("RUNNER_TEMP"), "lib"), .libPaths()))
+          library(zuroar)
+          str(zuroar_info())
+          testthat::test_dir(
+            "tests/testthat",
+            package = "zuroar",
+            load_package = "installed",
+            stop_on_failure = TRUE
+          )

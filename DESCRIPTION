@@ -5,7 +5,7 @@ Authors@R: c(
     person("Pedro", "Baltazar", , "pedrobtz@gmail.com",
            role = c("aut", "cre", "cph")),
     person("The CRoaring authors", role = "cph",
-           comment = "the bundled CRoaring library"))
+           comment = "CRoaring, bundled in src/croaring; see inst/COPYRIGHTS"))
 Description: Compressed sets of unsigned integers from 0 to 2^32 - 1, and
     up to 2^64 - 1, built on a bundled copy of 'CRoaring', the reference C
     implementation of 'Roaring' bitmaps (Lemire et al. 2018
@@ -15,12 +15,14 @@ Description: Compressed sets of unsigned integers from 0 to 2^32 - 1, and
     implementations in 'Java', 'Go', 'Rust' and 'Python'. To R code a
     bitmap behaves as a sorted vector without duplicates.
 License: MIT + file LICENSE
+Copyright: See inst/COPYRIGHTS for the bundled CRoaring library.
 URL: https://pedrobtz.github.io/zuroar/, https://github.com/pedrobtz/zuroar
 BugReports: https://github.com/pedrobtz/zuroar/issues
 Depends:
     R (>= 4.1)
 Suggests:
-    testthat (>= 3.0.0)
+    testthat (>= 3.0.0),
+    withr
 Config/Needs/website: knitr, rmarkdown
 Config/testthat/edition: 3
 Encoding: UTF-8

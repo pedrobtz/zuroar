@@ -1,17 +1,41 @@
-# Vendored third-party code. Stage 1 copies the files below into
-# src/croaring/ and verifies them against these pins.
+# Vendored third-party code: CRoaring, in src/croaring/.
+#
+# tools/verify-vendor checks that src/croaring/ is exactly the files pinned
+# here plus exactly the patches listed below, in order. CI runs it on every
+# push (.github/workflows/vendor.yml).
+#
+# Updating to a new release:
+#   1. Edit tag, commit and released. Set every sha256 to the new file's
+#      (sha256sum on the release assets; LICENSE and AUTHORS at the commit).
+#   2. tools/verify-vendor --write    re-derives src/croaring/ from upstream
+#                                      and the patch series.
+#   3. If a patch no longer applies, regenerate it against the new release
+#      and keep its purpose the same; record any new patch below.
+#   4. tools/verify-vendor            must pass; then the full CI profile.
 croaring:
-  upstream: https://github.com/RoaringBitmap/CRoaring
+  upstream: RoaringBitmap/CRoaring
   tag: v5.4.0
   commit: 20495fec4d1622b93284033a160f67d21a5aa8bb
   released: 2026-10-26
   licence: MIT (the MIT side of the Apache-2.0/MIT dual licence; design D9)
-  source: release assets of tag v5.4.0, the amalgamation.sh output
+  # roaring.c and roaring.h are the release assets of the tag, the output
+  # of amalgamation.sh. LICENSE and AUTHORS come from the tagged commit.
   files:
     roaring.c:
+      from: release
       sha256: cdbd007b635b9bb2dc2074c69cb9f768e8aaf2dbe68f622c8643689b4e975dbc
     roaring.h:
+      from: release
       sha256: b74054da2965baa17393c5ffa02bea587374fe33afcfff2c2d24dcf75fed419b
-  # Local patches, applied in order. Stage 1 adds the one that deletes
-  # the diagnostic pragmas (design §7.3).
-  patches: []
+    LICENSE:
+      from: commit
+      sha256: f8e1f16a3f22e001b44ae9b12625420b9a0c4dbb7ec0e9f83b6a3d38a9525411
+    AUTHORS:
+      from: commit
+      sha256: fa6126381dc3b7a05dbbaa419ba20ca4661d2163da34713c1069cb31aec11436
+  # Local patches in tools/patches/, applied in order with patch -p1.
+  patches:
+    # Deletes the six "#pragma GCC diagnostic" push/ignored/pop blocks (four
+    # in roaring.c, two in roaring.h). R CMD check reports pragmas that
+    # suppress diagnostics (design §7.3).
+    - 0001-remove-diagnostic-pragmas.patch
