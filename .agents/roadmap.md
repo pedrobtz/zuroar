@@ -21,7 +21,7 @@ external pointers and finalisers.
 | Stage | Title | CI | Issue | Pull request | Done |
 | --- | --- | --- | --- | --- | --- |
 | 0 | [Package identity](#stage-0--package-identity) | quick | [#2](https://github.com/pedrobtz/zuroar/issues/2) | [#15](https://github.com/pedrobtz/zuroar/pull/15) | 2026-11-06 |
-| 1 | [Vendored CRoaring](#stage-1--vendored-croaring) | full | [#3](https://github.com/pedrobtz/zuroar/issues/3) | | 2026-11-06 |
+| 1 | [Vendored CRoaring](#stage-1--vendored-croaring) | full | [#3](https://github.com/pedrobtz/zuroar/issues/3) | [#16](https://github.com/pedrobtz/zuroar/pull/16) | 2026-11-06 |
 | 2 | [The zuroar class](#stage-2--the-zuroar-class) | full | [#4](https://github.com/pedrobtz/zuroar/issues/4) | | |
 | 3 | [Set algebra](#stage-3--set-algebra) | quick | [#5](https://github.com/pedrobtz/zuroar/issues/5) | | |
 | 4 | [Rank, select and ranges](#stage-4--rank-select-and-ranges) | quick | [#6](https://github.com/pedrobtz/zuroar/issues/6) | | |
