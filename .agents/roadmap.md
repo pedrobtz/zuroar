@@ -2,8 +2,11 @@
 
 Status: approved 2026-11-02; revised the same day for the design's
 pyroaring amendment (sorted-vector methods in Stage 4, shifting and new
-comparisons in Stage 3, `mirai` in Stage 5). Implements
-[design.md](design.md).
+comparisons in Stage 3, `mirai` in Stage 5); re-planned 2026-11-06 for
+design D17 (the ALTREP representation, §14): a new Stage 4 switches the
+32-bit class to ALTREP before the stages that build on it, the later
+stages move up one number, and a Review stage closes the roadmap as
+`pkg-roadmap` now requires. Implements [design.md](design.md).
 Target: v0.1.0, the first CRAN release.
 Tracking: [v0.1.0 (#1)](https://github.com/pedrobtz/zuroar/issues/1), with
 one sub-issue per stage;
@@ -12,9 +15,14 @@ one sub-issue per stage;
 Design §9 plans eight stages, 0 to 7, with Stage 7 combining full CI, the
 README, the article, benchmarks and the release. This roadmap splits that
 last stage in three, because `Full CI` adds no features and
-`v0.1.0 readiness` is the release alone. Stages 0 to 6 match the design.
-Stage 2 is `full`, where the design has it quick, because it brings in the
-external pointers and finalisers.
+`v0.1.0 readiness` is the release alone, and appends `Review`. Stages 0
+to 3 match the design; Stage 4 is the representation switch of design
+D17, and Stages 5 to 8 are the design's 4 to 7. Stage 2 is `full`, where
+the design has it quick, because it brings in the external pointers and
+finalisers. Stages 5 to 8 were written on the external pointer before
+D17 (their commits are on the `stage-*-wip` branches); each is rebased
+onto Stage 4 when its turn comes, which changes little, since the S3
+methods and bindings reach the bitmap through `zro_get()`.
 
 ## Stages
 
@@ -24,12 +32,14 @@ external pointers and finalisers.
 | 1 | [Vendored CRoaring](#stage-1--vendored-croaring) | full | [#3](https://github.com/pedrobtz/zuroar/issues/3) | [#16](https://github.com/pedrobtz/zuroar/pull/16) | 2026-11-06 |
 | 2 | [The zuroar class](#stage-2--the-zuroar-class) | full | [#4](https://github.com/pedrobtz/zuroar/issues/4) | [#17](https://github.com/pedrobtz/zuroar/pull/17) | 2026-11-06 |
 | 3 | [Set algebra](#stage-3--set-algebra) | quick | [#5](https://github.com/pedrobtz/zuroar/issues/5) | [#18](https://github.com/pedrobtz/zuroar/pull/18) | 2026-11-06 |
-| 4 | [Rank, select and ranges](#stage-4--rank-select-and-ranges) | quick | [#6](https://github.com/pedrobtz/zuroar/issues/6) | | |
-| 5 | [Portable serialisation](#stage-5--portable-serialisation) | full | [#7](https://github.com/pedrobtz/zuroar/issues/7) | | |
-| 6 | [64-bit bitmaps](#stage-6--64-bit-bitmaps) | quick | [#8](https://github.com/pedrobtz/zuroar/issues/8) | | |
-| 7 | [README, article and benchmarks](#stage-7--readme-article-and-benchmarks) | quick | [#9](https://github.com/pedrobtz/zuroar/issues/9) | | |
-| 8 | [Full CI](#stage-8--full-ci) | full | [#10](https://github.com/pedrobtz/zuroar/issues/10) | | |
-| 9 | [v0.1.0 readiness](#stage-9--v010-readiness) | full | [#11](https://github.com/pedrobtz/zuroar/issues/11) | | |
+| 4 | [ALTREP representation](#stage-4--altrep-representation) | full | [#20](https://github.com/pedrobtz/zuroar/issues/20) | | |
+| 5 | [Rank, select and ranges](#stage-5--rank-select-and-ranges) | quick | [#6](https://github.com/pedrobtz/zuroar/issues/6) | | |
+| 6 | [Portable serialisation](#stage-6--portable-serialisation) | full | [#7](https://github.com/pedrobtz/zuroar/issues/7) | | |
+| 7 | [64-bit bitmaps](#stage-7--64-bit-bitmaps) | quick | [#8](https://github.com/pedrobtz/zuroar/issues/8) | | |
+| 8 | [README, article and benchmarks](#stage-8--readme-article-and-benchmarks) | quick | [#9](https://github.com/pedrobtz/zuroar/issues/9) | | |
+| 9 | [Full CI](#stage-9--full-ci) | full | [#10](https://github.com/pedrobtz/zuroar/issues/10) | | |
+| 10 | [v0.1.0 readiness](#stage-10--v010-readiness) | full | [#11](https://github.com/pedrobtz/zuroar/issues/11) | | |
+| 11 | [Review](#stage-11--review) | full | [#21](https://github.com/pedrobtz/zuroar/issues/21) | | |
 
 ## Stage 0 — Package identity
 
@@ -193,7 +203,63 @@ cardinality-only variants.
 
 **Design.** §5, §6.3, §8 (properties), D11, D12.
 
-## Stage 4 — Rank, select and ranges
+## Stage 4 — ALTREP representation
+
+**Issue.** [#20](https://github.com/pedrobtz/zuroar/issues/20), sub-issue of
+[v0.1.0](https://github.com/pedrobtz/zuroar/issues/1).
+
+**CI.** `full — new ALTREP methods and a second finalizer path, and
+serialisation through R itself: gctorture, valgrind, ASan, rchk.`
+
+**Goal.** A `zuroar` is an ALTREP double vector that never expands: it
+survives `saveRDS()` and `serialize()`, works as a data-frame column,
+answers `%in%` and `match()`, and every attempt to take its data pointer
+is an error. Nothing the user saw in Stages 2 and 3 changes except that
+`readRDS()` now gives the bitmap back.
+
+**Work.**
+
+- `src/zro_altrep.c`: the class and its methods as design §4 lists them:
+  `Length`, `Elt`, `Get_region`, refusing `Dataptr` and
+  `Dataptr_or_null`, `Is_sorted`, `No_NA`, `Extract_subset`,
+  `Duplicate`, `Serialized_state`, `Unserialize`, `Inspect`. The bitmap
+  lives in `data1` as the external pointer Stage 2 built, finaliser
+  included; `zro_shell()` and `zro_get()` wrap and unwrap it, so the
+  bindings of Stages 2 and 3 do not change.
+- `Serialized_state` writes the portable bytes (§6.4) and `Unserialize`
+  reads them through the bounded path of D8, so a corrupt `.rds` is a
+  `zuroar_error_format`, not a crash.
+- `zuroar_error_pointer` no longer applies to a `zuroar`; its tests move
+  to `zuroar64` in Stage 7. `format()` and `print()` keep working on any
+  object the class can produce.
+- `Dataptr` refusing signals `zuroar_error_unsupported` with a message
+  naming `as.double()` and `roar_values()`.
+- A test-only `.Call` that calls `REAL()` on a bitmap, to show the
+  refusal from C; tests for `saveRDS()` and `serialize()` round trips,
+  `identical()`, `%in%` and `match()` against the oracle, `data.frame(x)`,
+  `lapply()`, and `sum()`, `print()` and `head()` without expansion.
+- `CLAUDE.md`: the architecture entry and the invariants (`Dataptr` never
+  returns; every ALTREP method is CRoaring-only or protects what it
+  allocates).
+
+**Exit criteria.**
+
+- A bitmap saved with `saveRDS()` and read back equals the original, and
+  so does one through `serialize()`/`unserialize()` and through a
+  `mirai` daemon with no `serial` configuration.
+- `v %in% x` and `match(v, x)` match the oracle on the generated sets,
+  and the Stage 2 and 3 suites pass unchanged.
+- `as.double(x)`, `x + 1`, `x > 5`, `x[1] <- 5` and the test-only
+  `REAL()` call are errors, and `sum(x)`, `print(x)`, `x[[k]]` and
+  `head(x)` succeed, on a bitmap whose expansion would exceed available
+  memory (`roar_range(0, 2^32 - 1)`).
+- `identical(x, roar_unserialize(roar_serialize(x)))` is `TRUE`.
+- A full-profile r-actions run is green: gctorture at the sensitive step,
+  valgrind and ASan over the new methods, rchk on `src/zro_altrep.c`.
+
+**Design.** §4, §6.4, §6.6, §8 (lifetimes), §14, D4, D11, D17.
+
+## Stage 5 — Rank, select and ranges
 
 **Issue.** [#6](https://github.com/pedrobtz/zuroar/issues/6), sub-issue of
 [v0.1.0](https://github.com/pedrobtz/zuroar/issues/1).
@@ -210,10 +276,13 @@ with R's conventions, and a bitmap behaves as a sorted vector.
   `roar_values()` (bounded extraction), `roar_optimize()`, `roar_stats()`,
   `roar_size()`.
 - `roar_add(from =, to =)` and `roar_remove(from =, to =)`.
-- Sorted-vector methods (§6.6): `[`, `[[`, `head()`, `tail()`, `sort()`,
-  `unique()`, `mtfrm()`; `[<-`, `[[<-`, `rev()` and
-  `sort(decreasing = TRUE)` error; `zuroar_error_index` and
-  `zuroar_error_unsupported`.
+- Sorted-vector methods (§6.6): `[` (through Stage 4's
+  `Extract_subset`), `[[`, `head()`, `tail()`, `sort()`, `unique()`;
+  `[<-`, `[[<-`, `rev()` and `sort(decreasing = TRUE)` error;
+  `zuroar_error_index` and `zuroar_error_unsupported`. No `mtfrm()`:
+  D17 makes `%in%` and `match()` work without it.
+- Rebase of the `stage-4-wip` work (pull request #19, written on the
+  external pointer) onto Stage 4.
 
 **Exit criteria.**
 
@@ -227,9 +296,9 @@ with R's conventions, and a bitmap behaves as a sorted vector.
   and positions past the end are `zuroar_error_index`.
 - `R CMD check` passes on the quick profile.
 
-**Design.** §5, §6.2, §6.6, D6, D11.
+**Design.** §5, §6.2, §6.6, D6, D11, D17.
 
-## Stage 5 — Portable serialisation
+## Stage 6 — Portable serialisation
 
 **Issue.** [#7](https://github.com/pedrobtz/zuroar/issues/7), sub-issue of
 [v0.1.0](https://github.com/pedrobtz/zuroar/issues/1).
@@ -252,13 +321,18 @@ implementations' bytes read correctly, and no corrupt input crashes.
   corrupted cookies, container counts, offsets and run lengths.
 - A `libFuzzer` target over the deserialising entry point, run in
   development only.
-- `roar_serial_config()` for `mirai::daemons(serial = )`; `mirai (>= 2.3.0)`
-  in `Suggests`, guarded so the package works without it.
+- `roar_serial_config()` for `mirai::daemons(serial = )`, needed for
+  `zuroar64` (Stage 7) and harmless for `zuroar`, which Stage 4 made
+  travel on its own; `mirai (>= 2.3.0)` in `Suggests`, guarded so the
+  package works without it.
+- `Serialized_state` and `Unserialize` of Stage 4 share
+  `zro_portable_read()` with `roar_unserialize()`, so the hostile-input
+  tests and the fuzz target cover `readRDS()` of a corrupt file too.
 
 **Exit criteria.**
 
 - Round trips are exact on the generated sets.
-- A bitmap round-trips through a local `mirai` daemon with
+- A bitmap round-trips through a local `mirai` daemon with and without
   `roar_serial_config()` set; the test skips without `mirai`, and the
   `nosuggests` leg passes.
 - The `pyroaring` and Java fixtures read to the expected sets.
@@ -269,9 +343,9 @@ implementations' bytes read correctly, and no corrupt input crashes.
 - A full-profile r-actions run is green.
 
 **Design.** §6.4, §6.5, §8 (interoperability, hostile input, `mirai`),
-D5, D8.
+D5, D8, D17.
 
-## Stage 6 — 64-bit bitmaps
+## Stage 7 — 64-bit bitmaps
 
 **Issue.** [#8](https://github.com/pedrobtz/zuroar/issues/8), sub-issue of
 [v0.1.0](https://github.com/pedrobtz/zuroar/issues/1).
@@ -295,6 +369,10 @@ through decimal text.
 - Documentation that changes to a `zuroar64` copy the whole bitmap (D16).
 - Output as decimal text, or double when every value is below 2^53.
 - An error for mixing `zuroar` and `zuroar64` in one operation.
+- `zuroar64` stays an external pointer (design §4, §14): the
+  `zuroar_error_pointer` tests and `roar_serial_config()`'s purpose move
+  here, and the documentation says a `zuroar64` does not survive
+  `saveRDS()` where a `zuroar` does.
 
 **Exit criteria.**
 
@@ -307,7 +385,7 @@ through decimal text.
 
 **Design.** §2, §6.1, §6.4.
 
-## Stage 7 — README, article and benchmarks
+## Stage 8 — README, article and benchmarks
 
 **Issue.** [#9](https://github.com/pedrobtz/zuroar/issues/9), sub-issue of
 [v0.1.0](https://github.com/pedrobtz/zuroar/issues/1).
@@ -339,7 +417,7 @@ with every claim measured.
 
 **Design.** §7.2, §8 (benchmarks), §9 Stage 7.
 
-## Stage 8 — Full CI
+## Stage 9 — Full CI
 
 **Issue.** [#10](https://github.com/pedrobtz/zuroar/issues/10), sub-issue of
 [v0.1.0](https://github.com/pedrobtz/zuroar/issues/1).
@@ -362,7 +440,7 @@ the default branch's code is fixed.
 
 **Design.** §11.
 
-## Stage 9 — v0.1.0 readiness
+## Stage 10 — v0.1.0 readiness
 
 **Issue.** [#11](https://github.com/pedrobtz/zuroar/issues/11), sub-issue of
 [v0.1.0](https://github.com/pedrobtz/zuroar/issues/1).
@@ -375,18 +453,44 @@ the default branch's code is fixed.
 
 - `Version: 0.1.0` and the matching `NEWS.md` heading.
 - `cran-comments.md` listing the r-actions CI legs as test environments.
-- The `pkg-critical-review` skill, with its blocking and required findings
-  fixed; then the `pkg-cran-review` skill, with every finding resolved.
 - `urlchecker::url_check()` and `spelling::spell_check_package()`.
 
 **Exit criteria.**
 
 - `urlchecker::url_check()` and `spelling::spell_check_package()` are
   clean.
-- Every `pkg-critical-review` blocking and required finding and every
-  `pkg-cran-review` finding is resolved.
-- A full-profile r-actions run is green on the release commit.
+- A full-profile r-actions run is green on the merge commit.
 - The design's §11 acceptance criteria hold.
+
+**Design.** §11.
+
+## Stage 11 — Review
+
+**Issue.** [#21](https://github.com/pedrobtz/zuroar/issues/21), sub-issue of
+[v0.1.0](https://github.com/pedrobtz/zuroar/issues/1).
+
+**CI.** `full`.
+
+**Goal.** The release candidate as Stage 10 left it has been reviewed
+twice and only the submission itself is left.
+
+**Work.**
+
+- The `pkg-critical-review` skill over the whole package: its blocking
+  and required findings become sub-issues of the Review issue, each fixed
+  in a pull request that closes it.
+- Then the `pkg-cran-review` skill, run after those fixes so it sees the
+  code that is submitted, with every FAIL and WARN resolved.
+- `NEWS.md` reflecting any user-visible fix.
+
+**Exit criteria.**
+
+- Every blocking and required review issue is closed.
+- The `pkg-cran-review` table is clean on the default branch.
+- A full-profile r-actions run is green on the default branch, whose head
+  becomes the release commit.
+- The Review issue is closed by the review skills, not by a pull request,
+  and `v0.1.0` reads 100%.
 
 **Design.** §11.
 
@@ -403,12 +507,13 @@ From design §2, in the order expected:
 
 ## Open questions
 
-Q1 and Q3 were settled on 2026-11-02 by design D5 and D13.
+Q3 was settled on 2026-11-02 by design D13. Q1 was settled by D5 the
+same day and re-settled on 2026-11-06 by D17 (design §14).
 
 - **Q4. Settled 2026-11-06 by Stage 1's full run** (#16): no leg's
   compiler mishandles the AVX-512 target regions (gcc16, clang23,
   ubuntu-clang, Rtools on Windows release and devel, macOS clang).
 - **Q2** (after 0.1.0). Header and C table, or a second vendored copy in
   `zutable`? Blocks no stage.
-- **Q5** (Stage 9). Is v0.1.0 a CRAN submission before a sibling uses it?
+- **Q5** (Stage 10). Is v0.1.0 a CRAN submission before a sibling uses it?
   The board's `CRAN intent` records the answer.
