@@ -13,10 +13,15 @@ library(zuroar)
 
 ## Build a bitmap
 
-`roar()` takes whole numbers in any order, with or without duplicates.
-`roar_range()` takes both ends of a range, included as in
-[`seq()`](https://rdrr.io/r/base/seq.html), and `roar_add()` and
-`roar_remove()` return a changed copy.
+[`roar()`](https://pedrobtz.github.io/zuroar/reference/roar.md) takes
+whole numbers in any order, with or without duplicates.
+[`roar_range()`](https://pedrobtz.github.io/zuroar/reference/roar.md)
+takes both ends of a range, included as in
+[`seq()`](https://rdrr.io/r/base/seq.html), and
+[`roar_add()`](https://pedrobtz.github.io/zuroar/reference/roar_add.md)
+and
+[`roar_remove()`](https://pedrobtz.github.io/zuroar/reference/roar_add.md)
+return a changed copy.
 
 ``` r
 
@@ -48,9 +53,10 @@ c(x, roar(42L)) + 10
 
 ## Ask questions
 
-`roar_contains()` is the fast membership test. Ranges are inclusive,
-`roar_rank()` counts the values at or below one, `roar_select()` finds
-the `k`-th smallest, and `roar_next()` the nearest value above.
+[`roar_contains()`](https://pedrobtz.github.io/zuroar/reference/roar_contains.md)
+is the fast membership test. Ranges are inclusive, `roar_rank()` counts
+the values at or below one, `roar_select()` finds the `k`-th smallest,
+and `roar_next()` the nearest value above.
 
 ``` r
 

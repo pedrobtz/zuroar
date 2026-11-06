@@ -71,16 +71,16 @@ share.</p>
 <div class="section level2">
 <h2 id="build-a-bitmap">Build a bitmap<a class="anchor" aria-label="anchor" href="#build-a-bitmap"></a>
 </h2>
-<p><code>roar()</code> takes whole numbers in any order, with or without
-duplicates. <code>roar_range()</code> takes both ends of a range,
-included as in <code><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq()</a></code>, and <code>roar_add()</code> and
-<code>roar_remove()</code> return a changed copy.</p>
+<p><code><a href="../reference/roar.html">roar()</a></code> takes whole numbers in any order, with or without
+duplicates. <code><a href="../reference/roar.html">roar_range()</a></code> takes both ends of a range,
+included as in <code><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq()</a></code>, and <code><a href="../reference/roar_add.html">roar_add()</a></code> and
+<code><a href="../reference/roar_add.html">roar_remove()</a></code> return a changed copy.</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">x</span> <span class="op">&lt;-</span> <span class="fu">roar</span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1L</span>, <span class="fl">5L</span>, <span class="fl">9L</span>, <span class="fl">100000L</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="va">x</span> <span class="op">&lt;-</span> <span class="fu">roar_add</span><span class="op">(</span><span class="va">x</span>, <span class="fl">7L</span><span class="op">)</span></span>
-<span><span class="va">x</span> <span class="op">&lt;-</span> <span class="fu">roar_remove</span><span class="op">(</span><span class="va">x</span>, <span class="fl">5L</span><span class="op">)</span></span>
-<span><span class="va">y</span> <span class="op">&lt;-</span> <span class="fu">roar_range</span><span class="op">(</span><span class="fl">1</span>, <span class="fl">1e6</span><span class="op">)</span></span>
-<span><span class="va">y</span> <span class="op">&lt;-</span> <span class="fu">roar_remove</span><span class="op">(</span><span class="va">y</span>, from <span class="op">=</span> <span class="fl">10</span>, to <span class="op">=</span> <span class="fl">19</span><span class="op">)</span></span></code></pre></div>
+<code class="sourceCode R"><span><span class="va">x</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/roar.html">roar</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1L</span>, <span class="fl">5L</span>, <span class="fl">9L</span>, <span class="fl">100000L</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="va">x</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/roar_add.html">roar_add</a></span><span class="op">(</span><span class="va">x</span>, <span class="fl">7L</span><span class="op">)</span></span>
+<span><span class="va">x</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/roar_add.html">roar_remove</a></span><span class="op">(</span><span class="va">x</span>, <span class="fl">5L</span><span class="op">)</span></span>
+<span><span class="va">y</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/roar.html">roar_range</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">1e6</span><span class="op">)</span></span>
+<span><span class="va">y</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/roar_add.html">roar_remove</a></span><span class="op">(</span><span class="va">y</span>, from <span class="op">=</span> <span class="fl">10</span>, to <span class="op">=</span> <span class="fl">19</span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="use-it-like-a-sorted-vector">Use it like a sorted vector<a class="anchor" aria-label="anchor" href="#use-it-like-a-sorted-vector"></a>
@@ -97,17 +97,17 @@ value.</p>
 <span><span class="co">#&gt; [1] 7</span></span>
 <span><span class="va">x</span><span class="op">[</span><span class="fl">2</span><span class="op">:</span><span class="fl">3</span><span class="op">]</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">y</span>, <span class="fl">3</span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">x</span>, <span class="fu">roar</span><span class="op">(</span><span class="fl">42L</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span> <span class="fl">10</span></span></code></pre></div>
+<span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">x</span>, <span class="fu"><a href="../reference/roar.html">roar</a></span><span class="op">(</span><span class="fl">42L</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span> <span class="fl">10</span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="ask-questions">Ask questions<a class="anchor" aria-label="anchor" href="#ask-questions"></a>
 </h2>
-<p><code>roar_contains()</code> is the fast membership test. Ranges are
+<p><code><a href="../reference/roar_contains.html">roar_contains()</a></code> is the fast membership test. Ranges are
 inclusive, <code>roar_rank()</code> counts the values at or below one,
 <code>roar_select()</code> finds the <code>k</code>-th smallest, and
 <code>roar_next()</code> the nearest value above.</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu">roar_contains</span><span class="op">(</span><span class="va">x</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">5L</span>, <span class="fl">6L</span><span class="op">)</span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/roar_contains.html">roar_contains</a></span><span class="op">(</span><span class="va">x</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">5L</span>, <span class="fl">6L</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="co">#&gt; [1] FALSE FALSE</span></span>
 <span><span class="fu">roar_count</span><span class="op">(</span><span class="va">y</span>, from <span class="op">=</span> <span class="fl">10</span>, to <span class="op">=</span> <span class="fl">20</span><span class="op">)</span></span>
 <span><span class="co">#&gt; [1] 1</span></span>
