@@ -483,7 +483,12 @@ push(hidden)` and `pop` (R3), registers routines and calls
 *Settled 2026-11-06 (Stage 1):* `zro_roaring.h` includes every system
 header CRoaring uses before the hidden region, because the pragma also
 marks a first-seen extern declaration hidden, which would make libc
-references such as `posix_memalign` hidden. The pragma is skipped on
+references such as `posix_memalign` hidden. GCC also hides a
+*re*-declaration, and `roaring.c` re-declares `posix_memalign`; the first
+GCC run failed to link ("hidden symbol `posix_memalign' isn't defined").
+The wrapper unit therefore maps the name to a `static inline` forwarder
+defined before the hidden region, so CRoaring's declaration has internal
+linkage. The pragma is skipped on
 Windows, where symbols resolve per DLL, so there is no session-wide clash
 to prevent. Registration lives in `src/zro_init.c` rather than the
 wrapper unit, so the file that includes `roaring.c` holds nothing else.

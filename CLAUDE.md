@@ -145,7 +145,10 @@ when a stage establishes it.
 - **Include CRoaring only through `zro_roaring.h`, and R headers after
   it.** It must include each system header CRoaring uses before the hidden
   region. Under `#pragma GCC visibility push(hidden)`, a libc declaration
-  seen for the first time would be marked hidden too. `printf` is
+  seen for the first time would be marked hidden too; GCC hides a
+  re-declaration as well, which is why `zro_roaring.c` routes CRoaring's
+  own `posix_memalign` declaration to a static forwarder. Clang accepts
+  what GCC rejects here, so a macOS build proves nothing. `printf` is
   undefined again after `roaring.h`, except in the wrapper unit; left
   defined, it rewrites the `format(printf, ...)` attributes in R's headers.
 
