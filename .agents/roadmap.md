@@ -23,7 +23,7 @@ external pointers and finalisers.
 | 0 | [Package identity](#stage-0--package-identity) | quick | [#2](https://github.com/pedrobtz/zuroar/issues/2) | [#15](https://github.com/pedrobtz/zuroar/pull/15) | 2026-11-06 |
 | 1 | [Vendored CRoaring](#stage-1--vendored-croaring) | full | [#3](https://github.com/pedrobtz/zuroar/issues/3) | [#16](https://github.com/pedrobtz/zuroar/pull/16) | 2026-11-06 |
 | 2 | [The zuroar class](#stage-2--the-zuroar-class) | full | [#4](https://github.com/pedrobtz/zuroar/issues/4) | [#17](https://github.com/pedrobtz/zuroar/pull/17) | 2026-11-06 |
-| 3 | [Set algebra](#stage-3--set-algebra) | quick | [#5](https://github.com/pedrobtz/zuroar/issues/5) | | 2026-11-06 |
+| 3 | [Set algebra](#stage-3--set-algebra) | quick | [#5](https://github.com/pedrobtz/zuroar/issues/5) | [#18](https://github.com/pedrobtz/zuroar/pull/18) | 2026-11-06 |
 | 4 | [Rank, select and ranges](#stage-4--rank-select-and-ranges) | quick | [#6](https://github.com/pedrobtz/zuroar/issues/6) | | |
 | 5 | [Portable serialisation](#stage-5--portable-serialisation) | full | [#7](https://github.com/pedrobtz/zuroar/issues/7) | | |
 | 6 | [64-bit bitmaps](#stage-6--64-bit-bitmaps) | quick | [#8](https://github.com/pedrobtz/zuroar/issues/8) | | |
