@@ -44,7 +44,7 @@
 </div>
 <div class="section level2">
 <h2 id="current-state">Current state<a class="anchor" aria-label="anchor" href="#current-state"></a></h2>
-<p>Scaffolded 2026-11-01 with <code>create-pkg.sh</code> (C, <code>use_c()</code>). Stage 0 gave it its identity on 2026-11-06: real <code>DESCRIPTION</code>, <code>vendor.yaml</code> pins and CI. No functionality yet. The roadmap in <code>.agents/roadmap.md</code> takes it to v0.1.0.</p>
+<p>Scaffolded 2026-11-01 with <code>create-pkg.sh</code> (C, <code>use_c()</code>). Stages 0 to 3 merged on 2026-11-06: identity, vendored CRoaring, the <code>zuroar</code> class and its set algebra. The roadmap was re-planned the same day for design D17: Stage 4 switches <code>zuroar</code> from an external pointer to an ALTREP vector, and the later stages, already written on the pointer in the <code>stage-*-wip</code> branches, rebase onto it. The roadmap in <code>.agents/roadmap.md</code> takes it to v0.1.0.</p>
 </div>
 <div class="section level2">
 <h2 id="stage-tracking">Stage tracking<a class="anchor" aria-label="anchor" href="#stage-tracking"></a></h2>
@@ -115,7 +115,7 @@
 <li>
 <strong>Every function returns a new bitmap</strong> and none modifies its argument; copy-on-write keeps that cheap (D4). An in-place shortcut changes a value another R variable still holds.</li>
 <li>
-<strong>Every entry point checks for a null external pointer</strong>, which is what a bitmap becomes after <code><a href="https://rdrr.io/r/base/readRDS.html" class="external-link">readRDS()</a></code> or a <code>mirai</code> round trip, and errors with <code>zuroar_error_pointer</code> naming <code>roar_serialize()</code> (D5). Skipping the check is a segfault.</li>
+<strong>A <code>zuroar</code> is an ALTREP vector whose <code>Dataptr</code> never returns</strong> (D17, design §4, §14): it signals <code>zuroar_error_unsupported</code>, so no base or third-party C can expand the set, and <code>Dataptr_or_null</code> returns <code>NULL</code>. Its <code>Serialized_state</code> writes portable bytes and <code>Unserialize</code> reads them through the bounded path, so <code><a href="https://rdrr.io/r/base/readRDS.html" class="external-link">saveRDS()</a></code> works. A <code>zuroar64</code> stays an external pointer, and <strong>every entry point checks it for null</strong>, which is what it becomes after <code><a href="https://rdrr.io/r/base/readRDS.html" class="external-link">readRDS()</a></code>, erroring with <code>zuroar_error_pointer</code> naming <code>roar_serialize()</code> (D5). Skipping the check is a segfault.</li>
 <li>
 <strong>R conventions at the boundary:</strong> ranges are inclusive and become CRoaring’s half-open <code>[min, max)</code>; <code>roar_select()</code> counts from 1 where CRoaring counts from 0 (D6). Off-by-one errors here pass most tests.</li>
 <li>
