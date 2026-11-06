@@ -43,7 +43,10 @@
 #include <byteswap.h>
 #include <endian.h>
 #endif
-#if (defined(__x86_64__) || defined(_M_AMD64)) && !defined(ROARING_DISABLE_X64)
+/* roaring.h includes <x86intrin.h> on every x86-64 build, even with
+ * ROARING_DISABLE_X64, and GCC's <mm_malloc.h> under it declares
+ * posix_memalign. So it goes here unconditionally. */
+#if defined(__x86_64__) || defined(_M_AMD64)
 #include <x86intrin.h>
 #if defined(__GNUC__)
 #include <cpuid.h>
@@ -68,6 +71,19 @@
 #endif
 
 #if ZRO_HIDE_CROARING
+/* GCC applies the hidden visibility pragma even to a re-declaration of a
+ * function <stdlib.h> already declared, and roaring.c re-declares
+ * posix_memalign; the link then fails with "hidden symbol `posix_memalign'
+ * isn't defined" (clang keeps the first declaration's visibility). Inside
+ * both hidden regions the name is routed to this static forwarder, defined
+ * outside them, so any declaration there has internal linkage (C11
+ * 6.2.2p4) and no visibility to get wrong. Windows builds take CRoaring's
+ * MinGW branch and never reach posix_memalign. */
+static inline int zro_posix_memalign(void **memptr, size_t alignment,
+                                     size_t size) {
+  return posix_memalign(memptr, alignment, size);
+}
+#define posix_memalign zro_posix_memalign
 #pragma GCC visibility push(hidden)
 #endif
 #include "croaring/roaring.h"
@@ -75,8 +91,10 @@
 #pragma GCC visibility pop
 #endif
 
+/* The wrapper unit undefines both after roaring.c. */
 #ifndef ZRO_ROARING_UNIT
 #undef printf
+#undef posix_memalign
 #endif
 
 #endif /* ZRO_ROARING_H */

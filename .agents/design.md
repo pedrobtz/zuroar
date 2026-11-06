@@ -486,9 +486,12 @@ marks a first-seen extern declaration hidden, which would make libc
 references such as `posix_memalign` hidden. GCC also hides a
 *re*-declaration, and `roaring.c` re-declares `posix_memalign`; the first
 GCC run failed to link ("hidden symbol `posix_memalign' isn't defined").
-The wrapper unit therefore maps the name to a `static inline` forwarder
-defined before the hidden region, so CRoaring's declaration has internal
-linkage. The pragma is skipped on
+`zro_roaring.h` therefore maps the name to a `static inline` forwarder
+defined before its hidden region, so every declaration inside it has
+internal linkage. It also includes `<x86intrin.h>` on every x86-64 build,
+because `roaring.h` does even under `ROARING_DISABLE_X64`, and GCC's
+`<mm_malloc.h>` beneath it declares `posix_memalign` (the scalar build
+failed to link until it did). The pragma is skipped on
 Windows, where symbols resolve per DLL, so there is no session-wide clash
 to prevent. Registration lives in `src/zro_init.c` rather than the
 wrapper unit, so the file that includes `roaring.c` holds nothing else.
