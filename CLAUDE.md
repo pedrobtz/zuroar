@@ -276,7 +276,10 @@ minutes on sibling packages. Waiting on it between roadmap stages was the
 main thing slowing roadmaps down, so:
 
 - **Pull requests run the quick profile.** It should finish in under five
-  minutes. If it doesn't, raise gctorture's `quick-step` or trim
+  minutes. Here `-fanalyzer` (about 15 minutes over the amalgamation) runs
+  on a pull request only with the `full-ci` label, and on every push to
+  `main` (2026-11-06, Stage 3). Runner set-up (`setup-r`, apt) has taken
+  20 minutes on a bad day; that is the runner, not the profile. If it doesn't, raise gctorture's `quick-step` or trim
   `quick-containers` in the caller workflows; never cut the full profile.
 - **A `full` roadmap stage takes the `full-ci` label** and merges only on a
   green full run. The roadmap gives the reason in the stage's `**CI.**`

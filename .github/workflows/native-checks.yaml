@@ -39,8 +39,16 @@ jobs:
   rchk:
     uses: pedrobtz/r-actions/.github/workflows/rchk.yml@v1
 
+  # -fanalyzer over the CRoaring amalgamation takes about 15 minutes, three
+  # times the quick budget, so pull requests run it only with the full-ci
+  # label; every push to main and every full run still does. Findings in
+  # vendored CRoaring are listed apart, since they are upstream's.
   analyzers:
+    if: ${{ github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'full-ci') }}
     uses: pedrobtz/r-actions/.github/workflows/analyzers.yml@v1
+    with:
+      exclude: |
+        src/croaring/
 
   cran-special:
     uses: pedrobtz/r-actions/.github/workflows/cran-special.yml@v1
