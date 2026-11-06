@@ -5,9 +5,9 @@
 \alias{roar_remove}
 \title{Add or remove values}
 \usage{
-roar_add(x, values)
+roar_add(x, values, from, to)
 
-roar_remove(x, values)
+roar_remove(x, values, from, to)
 }
 \arguments{
 \item{x}{A bitmap.}
@@ -15,13 +15,17 @@ roar_remove(x, values)
 \item{values}{Whole numbers from 0 to 2^32 - 1, as an integer or double
 vector. \code{NA}, negative and fractional values are errors. A logical
 vector is an error too: use \code{\link[=which]{which()}} to turn one into positions.}
+
+\item{from, to}{Instead of \code{values}, the first and last values of a
+range, both included.}
 }
 \value{
 A bitmap.
 }
 \description{
-\code{roar_add()} returns a copy of \code{x} with \code{values} added and
-\code{roar_remove()} one with \code{values} removed. Neither changes \code{x}: like
+\code{roar_add()} returns a copy of \code{x} with values added and \code{roar_remove()}
+one with values removed: either the \code{values} given, or every whole
+number from \code{from} to \code{to}, both included. Neither changes \code{x}: like
 every zuroar function, they return a new bitmap. The copy shares
 CRoaring's containers with \code{x} until it changes them, so adding one
 value to a large bitmap does not copy it.
@@ -31,4 +35,7 @@ x <- roar(c(1, 5, 9))
 roar_add(x, 7)
 roar_remove(x, 5)
 x
+
+y <- roar_range(1, 100)
+roar_remove(y, from = 10, to = 89)
 }

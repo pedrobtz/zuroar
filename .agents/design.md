@@ -187,7 +187,7 @@ x[[2]]                                   # 7: one plain number
 head(y, 3); tail(y, 3)                   # bitmaps
 c(x, roar(42L))                          # union
 x + 10; x - 1                            # shifted bitmaps
-6 %in% x                                 # correct, but materialises x
+roar_contains(x, 6)                      # %in% is an error for a bitmap (§6.6)
 
 # queries
 min(x); max(x); range(x)
@@ -218,7 +218,11 @@ cfg <- roar_serial_config()              # for mirai::daemons(serial = cfg)
 ```
 
 `print()` and `format()` show the class, cardinality, range and first
-values. `[<-`, `rev()` and `!` are errors (§6.3, §6.6).
+values. *Settled 2026-11-06 (Stage 4):* `roar_values(x, from, n)` has no
+default for `n`, since bounded extraction is its point; `n = Inf` asks
+for every value. `roar_size(x)` is the size of the portable serialised
+form in bytes, exact and comparable across implementations;
+`roar_stats(x)` gives the in-memory bytes per container kind. `[<-`, `rev()` and `!` are errors (§6.3, §6.6).
 
 ### 5.1 Against pyroaring
 
@@ -235,7 +239,7 @@ has an R form here or is left out for a stated reason.
 | `add`, `update`, `discard`, `remove`, `add_checked` | `roar_add()`, `roar_remove()`, returning a new bitmap |
 | `add_range`, `remove_range` (half-open) | `roar_add(from =, to =)`, `roar_remove(from =, to =)` (inclusive) |
 | `clear`, `pop`, `overwrite`, `*_update`, `flip_inplace` | none: they only make sense in place |
-| `v in bm` | `roar_contains(x, v)`; `v %in% x` also works, slowly |
+| `v in bm` | `roar_contains(x, v)`; `v %in% x` is an error, since `match()` takes only vectors (§6.6) |
 | `contains_range`, `range_cardinality` | `roar_contains_range()`, `roar_count()` |
 | `len(bm)`, `bool(bm)` | `length(x)`, `length(x) > 0` |
 | `min`, `max` | `min()`, `max()`, `range()` |
@@ -414,9 +418,16 @@ kept compressed (D11). Positions count from 1 and are doubles, since a
 - **`sort(x)` and `unique(x)`** return `x`; `sort(x, decreasing = TRUE)`
   is an error, as is `rev(x)`: a set has no reversed form, and
   `rev(as.double(x))` is one call away.
-- **`mtfrm()`** returns `as.double(x)` (decimal text for `zuroar64`), so
-  `v %in% x` and `match(v, x)` give the right answer. They materialise
-  `x`; the documentation points to `roar_contains()` and `roar_rank()`.
+- **`v %in% x` and `match(v, x)`** are errors. *Amended 2026-11-06
+  (Stage 4):* the RFC planned an `mtfrm()` method for them, but base R's
+  `match()` rejects any non-vector before it consults `mtfrm()`, and a
+  bitmap is an external pointer (§4, D5). The documentation points to
+  `roar_contains()` and `roar_rank()`, or `v %in% as.double(x)`; no
+  `mtfrm()` method is defined, since it could never be reached.
+- **Positions** follow R where the design is silent (settled 2026-11-06,
+  Stage 4): fractional positions truncate toward zero, zeros are dropped,
+  and a logical index longer than `x` is a `zuroar_error_index` (R would
+  give `NA`). `x[]` returns `x`.
 - **`[<-` and `[[<-`** are errors: assigning by position has no meaning
   for a set; `roar_add()` and `roar_remove()` change it.
 
@@ -545,8 +556,8 @@ wrapper unit, so the file that includes `roaring.c` holds nothing else.
   above `v`.
 - **Sorted-vector oracle.** For generated `v` and `s <- sort(unique(v))`:
   `as.double(roar(v)[i])` equals `s[i]` for positive, negative and
-  logical `i`; `x[[k]]`, `head()`, `tail()`, `c()` and `match()` agree
-  with the same calls on `s`.
+  logical `i`; `x[[k]]`, `head()`, `tail()` and `c()` agree with the
+  same calls on `s` (`match()` dropped 2026-11-06, §6.6).
 - **Counts.** A `zuroar64` holding more than 2^53 values errors in
   `length()` and gives the right text from `roar64_length()`, including
   the full 2^64 range.
@@ -621,7 +632,8 @@ any of them.
 - **D11 (C).** A bitmap behaves as a sorted vector without duplicates
   wherever R lets a method say so: positional `[` returning a bitmap,
   `[[`, `head()`, `tail()`, `c()` as union, `sort()`, `unique()`,
-  `mtfrm()`, and `+` and `-` with a number as a shift (§6.3, §6.6). Where
+  and `+` and `-` with a number as a shift (§6.3, §6.6; `mtfrm()` removed
+  2026-11-06, since `match()` never reaches it for a bitmap). Where
   vector meaning and set meaning collide (`rev()`, `[<-`, `x > 5`), the
   operation is an error rather than a silent conversion.
 - **D12 (C).** Shifting a value out of the domain is an error unless
@@ -683,7 +695,9 @@ Checked on 2 November 2026, for the amendment:
   uses `portable_deserialize_safe()` and `internal_validate()` as D8 does.
 - R 4.5.2: `union()`, `intersect()`, `setdiff()`, `is.element()`,
   `%in%` and `match()` do not dispatch; `[`, `head()`, `tail()`, `rev()`,
-  `sort()`, `unique()`, `format()` and `mtfrm()` do.
+  `sort()`, `unique()`, `format()` and `mtfrm()` do, but `match()`
+  calls `mtfrm()` only after accepting a vector, which an external
+  pointer is not (checked 2026-11-06).
 - `mirai` 2.7.3: `serial_config(class, sfunc, ufunc)`, built on R's
   `refhook`, passed to `daemons(serial = )`; its NEWS gives 2.3.0 as the
   release that accepts several classes.

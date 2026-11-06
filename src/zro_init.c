@@ -27,6 +27,18 @@ static const R_CallMethodDef zro_call_methods[] = {
     {"zro_many", (DL_FUNC)&zro_many, 2},
     {"zro_flip", (DL_FUNC)&zro_flip, 2},
     {"zro_shift", (DL_FUNC)&zro_shift, 2},
+    {"zro_rank", (DL_FUNC)&zro_rank, 2},
+    {"zro_select", (DL_FUNC)&zro_select, 2},
+    {"zro_next", (DL_FUNC)&zro_next, 2},
+    {"zro_prev", (DL_FUNC)&zro_prev, 2},
+    {"zro_range_count", (DL_FUNC)&zro_range_count, 2},
+    {"zro_contains_range", (DL_FUNC)&zro_contains_range, 2},
+    {"zro_change_range", (DL_FUNC)&zro_change_range, 3},
+    {"zro_values", (DL_FUNC)&zro_values, 4},
+    {"zro_subset", (DL_FUNC)&zro_subset, 4},
+    {"zro_optimize", (DL_FUNC)&zro_optimize, 1},
+    {"zro_size", (DL_FUNC)&zro_size, 1},
+    {"zro_stats", (DL_FUNC)&zro_stats, 1},
     {NULL, NULL, 0}};
 
 void R_init_zuroar(DllInfo *dll) {

@@ -211,7 +211,7 @@ with R's conventions, and a bitmap behaves as a sorted vector.
   `roar_size()`.
 - `roar_add(from =, to =)` and `roar_remove(from =, to =)`.
 - Sorted-vector methods (§6.6): `[`, `[[`, `head()`, `tail()`, `sort()`,
-  `unique()`, `mtfrm()`; `[<-`, `[[<-`, `rev()` and
+  `unique()`; `[<-`, `[[<-`, `rev()` and
   `sort(decreasing = TRUE)` error; `zuroar_error_index` and
   `zuroar_error_unsupported`.
 
@@ -223,8 +223,11 @@ with R's conventions, and a bitmap behaves as a sorted vector.
   value qualifies.
 - Range bounds at 0 and 2^32 - 1 are inclusive and tested.
 - The sorted-vector oracle of design §8 passes for positive, negative and
-  logical `i`, `[[`, `head()`, `tail()` and `match()`; mixed signs, `NA`
-  and positions past the end are `zuroar_error_index`.
+  logical `i`, `[[`, `head()` and `tail()`; mixed signs, `NA` and
+  positions past the end are `zuroar_error_index`. *Deviation
+  2026-11-06:* `match()` is dropped from this criterion and `mtfrm()`
+  from the work. Base R's `match()` rejects an external pointer before it
+  calls `mtfrm()`, so `%in%` cannot work for a bitmap (design §6.6).
 - `R CMD check` passes on the quick profile.
 
 **Design.** §5, §6.2, §6.6, D6, D11.

@@ -112,6 +112,11 @@ Grows as stages land; see `.agents/design.md` §4.
   operations, cardinality-only counts and shifting. Out-of-domain shifts
   are decided in R from `min()` and `max()` before CRoaring's
   `add_offset()`, which drops silently.
+- `src/zro_order.c`, `R/order.R`, `R/index.R`: rank, select, next and
+  previous, ranges, bounded extraction, storage, and positional access.
+  `x[i]` turns the index into sorted runs of positions in R, and
+  `zro_subset()` reads runs longer than 64 positions as a range
+  intersection, shorter ones through an iterator.
 - `src/zro_info.c`, `R/info.R`: `zuroar_info()`.
 - `src/zro_selftest.c`: an unexported oracle hook, `.Call(zro_selftest, x,
   y, optimize)`, so the build variants test CRoaring before the bindings

@@ -15,9 +15,8 @@ roar_contains(x, values)
 A logical vector as long as \code{values}.
 }
 \description{
-\code{roar_contains()} tells, for each of \code{values}, whether \code{x} holds it.
-It is the fast form of \code{values \%in\% x}, which works too but expands
-\code{x} into a vector first.
+\code{roar_contains()} tells, for each of \code{values}, whether \code{x} holds it:
+the bitmap form of \code{values \%in\% x}, which R accepts only for vectors.
 }
 \examples{
 x <- roar(c(1, 5, 9))
