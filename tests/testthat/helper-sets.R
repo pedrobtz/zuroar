@@ -15,3 +15,27 @@ gen_sets <- function() {
     mixed = sort(unique(c(sparse, dense, runs)))
   )
 }
+
+# Doubles across the whole 32-bit domain, for the bindings. Each set
+# exercises one container kind or a boundary: 2^16 (the chunk size), 2^31
+# (past .Machine$integer.max) and 2^32 - 1 (the last value).
+gen_values <- function() {
+  top <- 4294967295
+  list(
+    empty = numeric(),
+    one = 7,
+    sparse = c(0, 65535, 65536, sample(2^32 - 1, 300)),
+    dense = 131072 + sample(65536, 20000) - 1,
+    runs = c(200000:260000, 65530:65545, (top - 100):top),
+    boundaries = c(0, 2^16 - 1, 2^16, 2^31 - 1, 2^31, 2^32 - 2, top),
+    duplicates = c(5, 5, 3, 3, 3, 2^31, 2^31),
+    mixed = c(
+      sample(2^32 - 1, 500),
+      131072 + sample(65536, 9000),
+      300000:340000
+    )
+  )
+}
+
+# The oracle: what a bitmap of `v` must hold.
+oracle <- function(v) sort(unique(as.double(v)))

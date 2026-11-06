@@ -21,7 +21,7 @@ library (every set operation is CRoaring's) and, in v0.1.0, not a C API.
 The specification is [`.agents/design.md`](.agents/design.md), adopted from
 [RFC 0061](https://github.com/pedrobtz/packages/blob/main/rfcs/started/0061-zuroar-roaring-bitmaps.md).
 It outranks this file: `CLAUDE.md` orients, the design doc decides. Its
-decisions D1 to D16 are the maintainer's to overturn; open questions Q2, Q4
+decisions D1 to D16 are the maintainer's to overturn; open questions Q2
 and Q5 are still open.
 
 ## Current state
@@ -99,6 +99,15 @@ Grows as stages land; see `.agents/design.md` §4.
 - `src/zro_roaring.c`: the wrapper unit, the only includer of `roaring.c`.
 - `src/zro_init.c`, `src/zro_init.h`: routine registration and the
   `.Call` prototypes.
+- `src/zro_bitmap.c`, `src/zro_bitmap.h`: the 32-bit bindings. A bitmap
+  is an external pointer of class `zuroar` with a finaliser. Entry points
+  allocate the result shell first (`zro_shell()`), then build the
+  bitmap, then `zro_attach()` it, so no R allocation can leak one.
+  `zro_get()` is the null-pointer check, and `zro_abort()` signals a
+  classed condition through the R-level `zro_abort()`.
+- `R/roar.R`, `R/methods.R`, `R/check.R`, `R/conditions.R`: constructors,
+  `roar_add()`/`roar_remove()`/`roar_contains()`, the vector methods,
+  type checks (the C side checks each value), and the condition helper.
 - `src/zro_info.c`, `R/info.R`: `zuroar_info()`.
 - `src/zro_selftest.c`: an unexported oracle hook, `.Call(zro_selftest, x,
   y, optimize)`, so the build variants test CRoaring before the bindings
@@ -142,6 +151,14 @@ when a stage establishes it.
   is an error, not a conversion to a plain vector or a dropped value (D11,
   D12).
 - **No `Imports`.** A runtime dependency needs a design decision first.
+- **`format()`, `print()` and `type_sum()` never signal.** R, testthat
+  and rlang format objects while handling a condition; a second error
+  there escapes the handler. They describe a null pointer instead, and
+  the lazily registered `pillar::type_sum()` method keeps rlang's
+  backtraces from calling `length()` on one (design §6.6).
+- **Allocate the shell before the bitmap.** `zro_shell()`, then the
+  CRoaring call, then `zro_attach()`. `zro_abort()` only when every
+  bitmap is attached or freed.
 - **Include CRoaring only through `zro_roaring.h`, and R headers after
   it.** It must include each system header CRoaring uses before the hidden
   region. Under `#pragma GCC visibility push(hidden)`, a libc declaration
@@ -172,9 +189,13 @@ when a stage establishes it.
   oracle for every operation, and portable-format fixtures written by
   `pyroaring` and Java's RoaringBitmap, with their generating scripts, are
   planned for Stage 5 (design §8).
-- **Helpers live in `tests/testthat/helper-*.R`.** None yet.
-- **Keep the suite inside the CRAN time budget.** Only the scaffold's
-  placeholder test exists so far.
+- **Helpers live in `tests/testthat/helper-*.R`.** `helper-sets.R` has
+  `gen_values()`, sets that hit each container kind and the boundaries at
+  2^16, 2^31 and 2^32 - 1, and `oracle()`, which is `sort(unique())`.
+  Call them inside `test_that()` after `withr::local_seed()`.
+- **`length()` is an integer when it fits.** R's dispatch converts a
+  method's double; compare with `length(oracle(v))`, not a double.
+- **Keep the suite inside the CRAN time budget.** It runs in seconds.
 
 ## Definition of done
 
