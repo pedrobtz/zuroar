@@ -29,5 +29,5 @@ Authors:
 
 Other contributors:
 
-- The CRoaring authors (the bundled CRoaring library) \[copyright
-  holder\]
+- The CRoaring authors (CRoaring, bundled in src/croaring; see
+  inst/COPYRIGHTS) \[copyright holder\]

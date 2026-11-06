@@ -5,7 +5,7 @@
 - **Pedro Baltazar**. Author, maintainer, copyright holder.
 
 - **The CRoaring authors**. Copyright holder.  
-  the bundled CRoaring library
+  CRoaring, bundled in src/croaring; see inst/COPYRIGHTS
 
 ## Citation
 

@@ -81,8 +81,22 @@
 </div>
 <div class="section level2">
 <h2 id="architecture">Architecture<a class="anchor" aria-label="anchor" href="#architecture"></a></h2>
-<p>To be written as stages land; see <code>.agents/design.md</code> §4. The scaffold set up a C native layer through <code>usethis::use_c()</code>: <code>src/zuroar.c</code> holds <code>R_init_zuroar()</code>, which registers routines and disables symbol search, and <code>R/zuroar-package.R</code> carries <code>@useDynLib zuroar, .registration = TRUE</code>.</p>
-</div>
+<p>Grows as stages land; see <code>.agents/design.md</code> §4.</p>
+<ul><li>
+<code>src/croaring/</code>: CRoaring’s <code>roaring.c</code> and <code>roaring.h</code>, upstream plus one patch. R compiles only top-level <code>src/*.c</code>, so nothing here builds on its own.</li>
+<li>
+<code>src/zro_roaring.h</code>: the only way first-party C includes CRoaring. It sets <code>NDEBUG</code>, includes every system header CRoaring uses, defines <code>printf</code> as <code>Rprintf</code> while <code>roaring.h</code> is parsed, and hides CRoaring’s declarations.</li>
+<li>
+<code>src/zro_roaring.c</code>: the wrapper unit, the only includer of <code>roaring.c</code>.</li>
+<li>
+<code>src/zro_init.c</code>, <code>src/zro_init.h</code>: routine registration and the <code>.Call</code> prototypes.</li>
+<li>
+<code>src/zro_info.c</code>, <code>R/info.R</code>: <code><a href="reference/zuroar_info.html">zuroar_info()</a></code>.</li>
+<li>
+<code>src/zro_selftest.c</code>: an unexported oracle hook, <code>.Call(zro_selftest, x, y, optimize)</code>, so the build variants test CRoaring before the bindings exist.</li>
+<li>
+<code>R/zuroar-package.R</code> carries <code>@useDynLib zuroar, .registration = TRUE</code>.</li>
+</ul></div>
 <div class="section level2">
 <h2 id="invariants-that-are-easy-to-break">Invariants that are easy to break<a class="anchor" aria-label="anchor" href="#invariants-that-are-easy-to-break"></a></h2>
 <p>These are fixed by the design before any code exists. Add each further one when a stage establishes it.</p>
@@ -106,6 +120,8 @@
 <strong>Vector meaning never silently overrides set meaning.</strong> Where the two collide (<code><a href="https://rdrr.io/r/base/rev.html" class="external-link">rev()</a></code>, <code>[&lt;-</code>, <code>x &gt; 5</code>, a shift out of the domain), the result is an error, not a conversion to a plain vector or a dropped value (D11, D12).</li>
 <li>
 <strong>No <code>Imports</code>.</strong> A runtime dependency needs a design decision first.</li>
+<li>
+<strong>Include CRoaring only through <code>zro_roaring.h</code>, and R headers after it.</strong> It must include each system header CRoaring uses before the hidden region. Under <code>#pragma GCC visibility push(hidden)</code>, a libc declaration seen for the first time would be marked hidden too; GCC hides a re-declaration as well, which is why <code>zro_roaring.h</code> routes every <code>posix_memalign</code> declaration in the hidden regions to a static forwarder. The prelude must mirror <code>roaring.h</code>’s includes, under the same conditions or wider. Clang accepts what GCC rejects here, so a macOS build proves nothing. <code>printf</code> is undefined again after <code>roaring.h</code>, except in the wrapper unit; left defined, it rewrites the <code>format(printf, ...)</code> attributes in R’s headers.</li>
 </ul></div>
 <div class="section level2">
 <h2 id="testing-conventions">Testing conventions<a class="anchor" aria-label="anchor" href="#testing-conventions"></a></h2>
@@ -153,7 +169,7 @@
 </ul></div>
 <div class="section level2">
 <h2 id="continuous-integration">Continuous integration<a class="anchor" aria-label="anchor" href="#continuous-integration"></a></h2>
-<p>Workflows come from <code>pedrobtz/r-actions</code>. Call those reusable workflows instead of writing bespoke ones, and pin a released tag rather than <code>main</code>. Pin a workflow that holds a write token, such as <code>coverage.yml</code>, to a commit, with the tag in a comment. The <code>R-CMD-check</code> workflow must call <code>r-cmd-check.yml</code>, because a hand-rolled one does not count as the pre-submission check. This package calls <code>r-cmd-check.yml@v1</code> and <code>coverage.yml@v1</code>; <code>pkgdown.yaml</code> is the r-lib example workflow.</p>
+<p>Workflows come from <code>pedrobtz/r-actions</code>. Call those reusable workflows instead of writing bespoke ones, and pin a released tag rather than <code>main</code>. Pin a workflow that holds a write token, such as <code>coverage.yml</code>, to a commit, with the tag in a comment. The <code>R-CMD-check</code> workflow must call <code>r-cmd-check.yml</code>, because a hand-rolled one does not count as the pre-submission check. This package calls <code>r-cmd-check.yml@v1</code>; <code>coverage.yml</code> and <code>vendor-upstream.yml</code> (write tokens) pinned to the <code>v1</code> commit; <code>native-checks.yaml</code> (sanitizers, valgrind, LTO, rchk, analyzers, cran-special), <code>gctorture.yaml</code> and <code>vendor.yaml</code> at <code>@v1</code>. <code>build-variants.yaml</code> is the package’s own development-only job (design §7.4): it builds the default, no-AVX-512 and scalar variants, runs <code>tools/check-symbols</code> and the tests on each. <code>pkgdown.yaml</code> is the r-lib example workflow.</p>
 <p>Small edits get a small run. The shared workflows look at the files a pull request changes, compared with its merge base:</p>
 <ul><li>
 <strong>Markdown only</strong>, such as <code>README.md</code>, <code>NEWS.md</code> or <code>cran-comments.md</code>, skips every check. Only coverage and the pkgdown site run.</li>
@@ -178,13 +194,26 @@
 </div>
 <div class="section level2">
 <h2 id="vendored-native-code">Vendored native code<a class="anchor" aria-label="anchor" href="#vendored-native-code"></a></h2>
-<p>CRoaring 5.4.0 (tag <code>v5.4.0</code>, commit <code>20495fec4d1622b93284033a160f67d21a5aa8bb</code>), the <code>roaring.c</code> and <code>roaring.h</code> amalgamation, used under the MIT side of its Apache-2.0/MIT dual licence (D9). The design places it in <code>src/croaring/</code> with pins and checksums in <code>vendor.yaml</code>, and plans one patch (deleting the diagnostic pragmas), <code>printf</code> redefined as <code>Rprintf</code> and <code>NDEBUG</code> set in the wrapper unit (design §7.3). The rest of this section is to fill in when Stage 1 vendors it.</p>
+<p>CRoaring 5.4.0 (tag <code>v5.4.0</code>, commit <code>20495fec4d1622b93284033a160f67d21a5aa8bb</code>), the <code>roaring.c</code> and <code>roaring.h</code> amalgamation, used under the MIT side of its Apache-2.0/MIT dual licence (D9). Vendored in Stage 1.</p>
+<ul><li>
+<strong>Layout.</strong> <code>src/croaring/</code> holds <code>roaring.c</code>, <code>roaring.h</code>, upstream <code>LICENSE</code> and <code>AUTHORS</code>. <code>inst/COPYRIGHTS</code> and the <code>cph</code> entry in <code>DESCRIPTION</code> declare it.</li>
+<li>
+<strong>Pins.</strong> <code>vendor.yaml</code> (not <code>src/vendor/PROVENANCE</code>) records the tag, the commit, the SHA-256 of all four files, and the patch series, with the update procedure in its header comment.</li>
+<li>
+<strong>The one patch.</strong> <code>tools/patches/0001-remove-diagnostic-pragmas.patch</code> deletes the six <code>#pragma GCC diagnostic</code> blocks, four in <code>roaring.c</code> and two in <code>roaring.h</code>. <code>printf</code> is handled by the macro in <code>zro_roaring.h</code> instead of a patch; <code>tools/check-symbols</code> proves no <code>printf</code> is linked.</li>
+<li>
+<strong>Verification.</strong> <code>tools/verify-vendor</code> derives the tree from upstream plus the patches and compares it byte for byte. <code>--canary</code> must fail, and <code>--write</code> re-derives the tree for a bump. The <code>vendor</code> workflow runs it on every push and requires a change to <code>src/croaring/</code> to change <code>vendor.yaml</code> too. <code>vendor-upstream</code> opens an issue weekly when CRoaring releases.</li>
+<li>
+<strong>Symbols.</strong> <code>tools/check-symbols</code> runs after each build variant in the <code>build-variants</code> workflow. It fails on stdio, <code>abort</code>, <code>exit</code> or RNG references and on any exported CRoaring symbol.</li>
+<li>
+<code>tools/</code>, <code>vendor.yaml</code> and the patches are build-ignored; the tarball ships only the patched result.</li>
+</ul><p>General rules for vendored code:</p>
 <ul><li>Pin a stable upstream release, never <code>master</code> or a release candidate.</li>
 <li>Record the tag, the commit and the checksums, and write down the update procedure so the next bump is mechanical.</li>
-<li>Keep upstream <code>LICENSE</code> and <code>NOTICE</code> under <code>src/vendor/&lt;lib&gt;/</code>, declare the vendored code in <code>DESCRIPTION</code> and <code>inst/COPYRIGHTS</code>.</li>
+<li>Keep upstream <code>LICENSE</code> and <code>NOTICE</code> beside the vendored code, declare the vendored code in <code>DESCRIPTION</code> and <code>inst/COPYRIGHTS</code>.</li>
 <li>Keep the vendor tree clearly separated from first-party source, and record every local patch and why it exists.</li>
 <li>
-<strong>CRAN’s compiled-code check applies to vendored code too.</strong> No <code>stdout</code> or <code>stderr</code>, no <code>printf</code>, <code>abort</code>, <code>exit</code> or system RNG may be linked, even behind a debug switch that never runs. Remove them with a patch in <code>tools/patches/</code>, list it in <code>src/vendor/PROVENANCE</code>, and make the vendor-verify script check “upstream plus exactly these patches”. Avoid diagnostic-suppressing pragmas too, because they draw their own NOTE. zuhtml is the reference: <code>tools/patches/0002-no-stdio.patch</code> and <code>tools/verify-vendor</code>. zuxml’s first upload was archived because it justified such a symbol instead of patching it.</li>
+<strong>CRAN’s compiled-code check applies to vendored code too.</strong> No <code>stdout</code> or <code>stderr</code>, no <code>printf</code>, <code>abort</code>, <code>exit</code> or system RNG may be linked, even behind a debug switch that never runs. Remove them with a patch in <code>tools/patches/</code>, list it in <code>vendor.yaml</code>, and make the vendor-verify script check “upstream plus exactly these patches”. Avoid diagnostic-suppressing pragmas too, because they draw their own NOTE. zuhtml is the reference: <code>tools/patches/0002-no-stdio.patch</code> and <code>tools/verify-vendor</code>. zuxml’s first upload was archived because it justified such a symbol instead of patching it.</li>
 <li>Guard against regressions in CI: run <code>nm -u</code> on the built objects and fail on any of those symbols, so an upstream bump cannot bring them back.</li>
 </ul></div>
 <div class="section level2">
