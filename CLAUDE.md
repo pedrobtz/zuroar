@@ -108,6 +108,10 @@ Grows as stages land; see `.agents/design.md` §4.
 - `R/roar.R`, `R/methods.R`, `R/check.R`, `R/conditions.R`: constructors,
   `roar_add()`/`roar_remove()`/`roar_contains()`, the vector methods,
   type checks (the C side checks each value), and the condition helper.
+- `src/zro_algebra.c`, `R/algebra.R`: `Ops`, `c()`, the named set
+  operations, cardinality-only counts and shifting. Out-of-domain shifts
+  are decided in R from `min()` and `max()` before CRoaring's
+  `add_offset()`, which drops silently.
 - `src/zro_info.c`, `R/info.R`: `zuroar_info()`.
 - `src/zro_selftest.c`: an unexported oracle hook, `.Call(zro_selftest, x,
   y, optimize)`, so the build variants test CRoaring before the bindings

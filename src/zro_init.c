@@ -20,6 +20,13 @@ static const R_CallMethodDef zro_call_methods[] = {
     {"zro_to_integer", (DL_FUNC)&zro_to_integer, 1},
     {"zro_head_values", (DL_FUNC)&zro_head_values, 2},
     {"zro_is_null", (DL_FUNC)&zro_is_null, 1},
+    {"zro_binop", (DL_FUNC)&zro_binop, 3},
+    {"zro_binop_cardinality", (DL_FUNC)&zro_binop_cardinality, 3},
+    {"zro_compare", (DL_FUNC)&zro_compare, 3},
+    {"zro_jaccard", (DL_FUNC)&zro_jaccard, 2},
+    {"zro_many", (DL_FUNC)&zro_many, 2},
+    {"zro_flip", (DL_FUNC)&zro_flip, 2},
+    {"zro_shift", (DL_FUNC)&zro_shift, 2},
     {NULL, NULL, 0}};
 
 void R_init_zuroar(DllInfo *dll) {

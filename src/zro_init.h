@@ -21,4 +21,13 @@ SEXP zro_to_integer(SEXP a0);
 SEXP zro_head_values(SEXP a0, SEXP a1);
 SEXP zro_is_null(SEXP a0);
 
+/* zro_algebra.c */
+SEXP zro_binop(SEXP a0, SEXP a1, SEXP a2);
+SEXP zro_binop_cardinality(SEXP a0, SEXP a1, SEXP a2);
+SEXP zro_compare(SEXP a0, SEXP a1, SEXP a2);
+SEXP zro_jaccard(SEXP a0, SEXP a1);
+SEXP zro_many(SEXP a0, SEXP a1);
+SEXP zro_flip(SEXP a0, SEXP a1);
+SEXP zro_shift(SEXP a0, SEXP a1);
+
 #endif /* ZRO_INIT_H */
