@@ -9,9 +9,8 @@
 /* What CRoaring was compiled with and what this processor offers. The
  * CRoaring call comes first; R objects are built only after it returns. */
 SEXP zro_info(void) {
-  int hw = 0;
 #if defined(CROARING_IS_X64) || defined(CROARING_IS_ARM64)
-  hw = croaring_hardware_support();
+  int hw = croaring_hardware_support();
 #endif
 
   const char *compiled[3];
