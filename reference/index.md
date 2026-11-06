@@ -2,14 +2,31 @@
 
 ## All functions
 
+- [`c(`*`<zuroar>`*`)`](https://pedrobtz.github.io/zuroar/reference/c.zuroar.md)
+  : Combine bitmaps
 - [`roar()`](https://pedrobtz.github.io/zuroar/reference/roar.md)
   [`roar_range()`](https://pedrobtz.github.io/zuroar/reference/roar.md)
   : Build a bitmap
 - [`roar_add()`](https://pedrobtz.github.io/zuroar/reference/roar_add.md)
   [`roar_remove()`](https://pedrobtz.github.io/zuroar/reference/roar_add.md)
   : Add or remove values
+- [`roar_cardinality()`](https://pedrobtz.github.io/zuroar/reference/roar_cardinality.md)
+  [`roar_jaccard()`](https://pedrobtz.github.io/zuroar/reference/roar_cardinality.md)
+  [`roar_intersects()`](https://pedrobtz.github.io/zuroar/reference/roar_cardinality.md)
+  [`roar_disjoint()`](https://pedrobtz.github.io/zuroar/reference/roar_cardinality.md)
+  : Compare sets without building them
 - [`roar_contains()`](https://pedrobtz.github.io/zuroar/reference/roar_contains.md)
   : Test membership
+- [`roar_shift()`](https://pedrobtz.github.io/zuroar/reference/roar_shift.md)
+  : Shift every value
+- [`roar_union()`](https://pedrobtz.github.io/zuroar/reference/roar_union.md)
+  [`roar_intersect()`](https://pedrobtz.github.io/zuroar/reference/roar_union.md)
+  [`roar_xor()`](https://pedrobtz.github.io/zuroar/reference/roar_union.md)
+  [`roar_andnot()`](https://pedrobtz.github.io/zuroar/reference/roar_union.md)
+  [`roar_flip()`](https://pedrobtz.github.io/zuroar/reference/roar_union.md)
+  : Set operations by name
+- [`Ops(`*`<zuroar>`*`)`](https://pedrobtz.github.io/zuroar/reference/zuroar-ops.md)
+  : Operators on bitmaps
 - [`length(`*`<zuroar>`*`)`](https://pedrobtz.github.io/zuroar/reference/zuroar-vector.md)
   [`Summary(`*`<zuroar>`*`)`](https://pedrobtz.github.io/zuroar/reference/zuroar-vector.md)
   [`as.double(`*`<zuroar>`*`)`](https://pedrobtz.github.io/zuroar/reference/zuroar-vector.md)

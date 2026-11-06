@@ -95,6 +95,8 @@
 <li>
 <code>R/roar.R</code>, <code>R/methods.R</code>, <code>R/check.R</code>, <code>R/conditions.R</code>: constructors, <code><a href="reference/roar_add.html">roar_add()</a></code>/<code><a href="reference/roar_add.html">roar_remove()</a></code>/<code><a href="reference/roar_contains.html">roar_contains()</a></code>, the vector methods, type checks (the C side checks each value), and the condition helper.</li>
 <li>
+<code>src/zro_algebra.c</code>, <code>R/algebra.R</code>: <code>Ops</code>, <code><a href="https://rdrr.io/r/base/c.html" class="external-link">c()</a></code>, the named set operations, cardinality-only counts and shifting. Out-of-domain shifts are decided in R from <code><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">min()</a></code> and <code><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">max()</a></code> before CRoaring’s <code>add_offset()</code>, which drops silently.</li>
+<li>
 <code>src/zro_info.c</code>, <code>R/info.R</code>: <code><a href="reference/zuroar_info.html">zuroar_info()</a></code>.</li>
 <li>
 <code>src/zro_selftest.c</code>: an unexported oracle hook, <code>.Call(zro_selftest, x, y, optimize)</code>, so the build variants test CRoaring before the bindings exist.</li>
@@ -192,7 +194,7 @@
 <h3 id="quick-by-default-full-by-exception">Quick by default, full by exception<a class="anchor" aria-label="anchor" href="#quick-by-default-full-by-exception"></a></h3>
 <p>The full profile is slow. gctorture at step 20 alone has taken 36 to 107 minutes on sibling packages. Waiting on it between roadmap stages was the main thing slowing roadmaps down, so:</p>
 <ul><li>
-<strong>Pull requests run the quick profile.</strong> It should finish in under five minutes. If it doesn’t, raise gctorture’s <code>quick-step</code> or trim <code>quick-containers</code> in the caller workflows; never cut the full profile.</li>
+<strong>Pull requests run the quick profile.</strong> It should finish in under five minutes. Here <code>-fanalyzer</code> (about 15 minutes over the amalgamation) runs on a pull request only with the <code>full-ci</code> label, and on every push to <code>main</code> (2026-11-06, Stage 3). Runner set-up (<code>setup-r</code>, apt) has taken 20 minutes on a bad day; that is the runner, not the profile. If it doesn’t, raise gctorture’s <code>quick-step</code> or trim <code>quick-containers</code> in the caller workflows; never cut the full profile.</li>
 <li>
 <strong>A <code>full</code> roadmap stage takes the <code>full-ci</code> label</strong> and merges only on a green full run. The roadmap gives the reason in the stage’s <code>**CI.**</code> line, for example first compiled code, a <code>PROTECT</code> or finalizer change, a vendored library, or a Windows-only path.</li>
 <li>

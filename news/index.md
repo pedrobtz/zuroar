@@ -32,3 +32,24 @@
 - Errors inherit from `zuroar_error`, with `zuroar_error_value`,
   `zuroar_error_pointer`, `zuroar_error_unsupported` and
   `zuroar_error_memory` for the specific cases.
+
+- Set algebra: `|`, `&`,
+  [`roar_xor()`](https://pedrobtz.github.io/zuroar/reference/roar_union.md),
+  [`roar_andnot()`](https://pedrobtz.github.io/zuroar/reference/roar_union.md),
+  [`roar_union()`](https://pedrobtz.github.io/zuroar/reference/roar_union.md),
+  [`roar_intersect()`](https://pedrobtz.github.io/zuroar/reference/roar_union.md)
+  and [`c()`](https://rdrr.io/r/base/c.html) build bitmaps; `==`, `!=`,
+  `<=`, `<`, `>=` and `>` compare them as sets;
+  [`roar_cardinality()`](https://pedrobtz.github.io/zuroar/reference/roar_cardinality.md),
+  [`roar_jaccard()`](https://pedrobtz.github.io/zuroar/reference/roar_cardinality.md),
+  [`roar_intersects()`](https://pedrobtz.github.io/zuroar/reference/roar_cardinality.md)
+  and
+  [`roar_disjoint()`](https://pedrobtz.github.io/zuroar/reference/roar_cardinality.md)
+  answer without building one.
+  [`roar_flip()`](https://pedrobtz.github.io/zuroar/reference/roar_union.md)
+  flips a range.
+
+- `x + k`, `x - k` and
+  [`roar_shift()`](https://pedrobtz.github.io/zuroar/reference/roar_shift.md)
+  shift every value; leaving the domain is an error unless
+  `roar_shift(drop = TRUE)`.
