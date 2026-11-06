@@ -26,10 +26,13 @@ and Q5 are still open.
 
 ## Current state
 
-Scaffolded 2026-11-01 with `create-pkg.sh` (C, `use_c()`). Stage 0 gave it
-its identity on 2026-11-06: real `DESCRIPTION`, `vendor.yaml` pins and CI.
-No functionality yet. The roadmap in `.agents/roadmap.md` takes it to
-v0.1.0.
+Scaffolded 2026-11-01 with `create-pkg.sh` (C, `use_c()`). Stages 0 to 3
+merged on 2026-11-06: identity, vendored CRoaring, the `zuroar` class and
+its set algebra. The roadmap was re-planned the same day for design D17:
+Stage 4 switches `zuroar` from an external pointer to an ALTREP vector,
+and the later stages, already written on the pointer in the `stage-*-wip`
+branches, rebase onto it. The roadmap in `.agents/roadmap.md` takes it
+to v0.1.0.
 
 ## Stage tracking
 
@@ -137,10 +140,15 @@ when a stage establishes it.
 - **Every function returns a new bitmap** and none modifies its argument;
   copy-on-write keeps that cheap (D4). An in-place shortcut changes a value
   another R variable still holds.
-- **Every entry point checks for a null external pointer**, which is what a
-  bitmap becomes after `readRDS()` or a `mirai` round trip, and errors with
-  `zuroar_error_pointer` naming `roar_serialize()` (D5). Skipping the check
-  is a segfault.
+- **A `zuroar` is an ALTREP vector whose `Dataptr` never returns** (D17,
+  design §4, §14): it signals `zuroar_error_unsupported`, so no base or
+  third-party C can expand the set, and `Dataptr_or_null` returns `NULL`.
+  Its `Serialized_state` writes portable bytes and `Unserialize` reads
+  them through the bounded path, so `saveRDS()` works. A `zuroar64` stays
+  an external pointer, and **every entry point checks it for null**,
+  which is what it becomes after `readRDS()`, erroring with
+  `zuroar_error_pointer` naming `roar_serialize()` (D5). Skipping the
+  check is a segfault.
 - **R conventions at the boundary:** ranges are inclusive and become
   CRoaring's half-open `[min, max)`; `roar_select()` counts from 1 where
   CRoaring counts from 0 (D6). Off-by-one errors here pass most tests.
