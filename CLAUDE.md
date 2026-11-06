@@ -108,6 +108,10 @@ Grows as stages land; see `.agents/design.md` §4.
 - `R/roar.R`, `R/methods.R`, `R/check.R`, `R/conditions.R`: constructors,
   `roar_add()`/`roar_remove()`/`roar_contains()`, the vector methods,
   type checks (the C side checks each value), and the condition helper.
+- `src/zro_algebra.c`, `R/algebra.R`: `Ops`, `c()`, the named set
+  operations, cardinality-only counts and shifting. Out-of-domain shifts
+  are decided in R from `min()` and `max()` before CRoaring's
+  `add_offset()`, which drops silently.
 - `src/zro_info.c`, `R/info.R`: `zuroar_info()`.
 - `src/zro_selftest.c`: an unexported oracle hook, `.Call(zro_selftest, x,
   y, optimize)`, so the build variants test CRoaring before the bindings
@@ -272,7 +276,10 @@ minutes on sibling packages. Waiting on it between roadmap stages was the
 main thing slowing roadmaps down, so:
 
 - **Pull requests run the quick profile.** It should finish in under five
-  minutes. If it doesn't, raise gctorture's `quick-step` or trim
+  minutes. Here `-fanalyzer` (about 15 minutes over the amalgamation) runs
+  on a pull request only with the `full-ci` label, and on every push to
+  `main` (2026-11-06, Stage 3). Runner set-up (`setup-r`, apt) has taken
+  20 minutes on a bad day; that is the runner, not the profile. If it doesn't, raise gctorture's `quick-step` or trim
   `quick-containers` in the caller workflows; never cut the full profile.
 - **A `full` roadmap stage takes the `full-ci` label** and merges only on a
   green full run. The roadmap gives the reason in the stage's `**CI.**`

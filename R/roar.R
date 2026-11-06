@@ -36,19 +36,7 @@ roar <- function(values = integer(), optimize = TRUE) {
 #' @rdname roar
 #' @export
 roar_range <- function(from, to) {
-  from <- check_scalar_value(from, "from")
-  to <- check_scalar_value(to, "to")
-  if (from > to) {
-    zro_abort(
-      "zuroar_error_value",
-      sprintf(
-        "`from` (%s) must not be larger than `to` (%s).",
-        format(from, scientific = FALSE),
-        format(to, scientific = FALSE)
-      )
-    )
-  }
-  .Call(zro_from_range, c(from, to))
+  .Call(zro_from_range, check_range(from, to))
 }
 
 #' Add or remove values

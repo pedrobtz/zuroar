@@ -69,3 +69,27 @@ check_bitmap <- function(x, arg = "x") {
   }
   invisible(x)
 }
+
+check_bitmaps <- function(xs) {
+  for (i in seq_along(xs)) {
+    check_bitmap(xs[[i]], sprintf("..%d", i))
+  }
+  xs
+}
+
+# Inclusive range ends, as a double vector of length two, from <= to.
+check_range <- function(from, to) {
+  from <- check_scalar_value(from, "from")
+  to <- check_scalar_value(to, "to")
+  if (from > to) {
+    zro_abort(
+      "zuroar_error_value",
+      sprintf(
+        "`from` (%s) must not be larger than `to` (%s).",
+        format(from, scientific = FALSE),
+        format(to, scientific = FALSE)
+      )
+    )
+  }
+  c(from, to)
+}

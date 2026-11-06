@@ -14,3 +14,10 @@
 * Errors inherit from `zuroar_error`, with `zuroar_error_value`,
   `zuroar_error_pointer`, `zuroar_error_unsupported` and
   `zuroar_error_memory` for the specific cases.
+* Set algebra: `|`, `&`, `roar_xor()`, `roar_andnot()`, `roar_union()`,
+  `roar_intersect()` and `c()` build bitmaps; `==`, `!=`, `<=`, `<`, `>=`
+  and `>` compare them as sets; `roar_cardinality()`, `roar_jaccard()`,
+  `roar_intersects()` and `roar_disjoint()` answer without building one.
+  `roar_flip()` flips a range.
+* `x + k`, `x - k` and `roar_shift()` shift every value; leaving the
+  domain is an error unless `roar_shift(drop = TRUE)`.
