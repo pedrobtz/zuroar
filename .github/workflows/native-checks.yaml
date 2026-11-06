@@ -30,6 +30,8 @@ jobs:
     uses: pedrobtz/r-actions/.github/workflows/valgrind.yml@v1
     with:
       profile: auto
+      # A cli thread's TLS reads as "possibly lost"; see the file.
+      suppressions: tools/valgrind.supp
 
   lto:
     uses: pedrobtz/r-actions/.github/workflows/lto.yml@v1
