@@ -1,15 +1,29 @@
 Package: zuroar
-Title: What the Package Does (One Line, Title Case)
+Title: Compressed Sets of Unsigned Integers with 'Roaring' Bitmaps
 Version: 0.0.0.9000
-Authors@R: 
-    person("First", "Last", , "first.last@example.com", role = c("aut", "cre"))
-Description: What the package does (one paragraph).
+Authors@R: c(
+    person("Pedro", "Baltazar", , "pedrobtz@gmail.com",
+           role = c("aut", "cre", "cph")),
+    person("The CRoaring authors", role = "cph",
+           comment = "the bundled CRoaring library"))
+Description: Compressed sets of unsigned integers from 0 to 2^32 - 1, and
+    up to 2^64 - 1, built on a bundled copy of 'CRoaring', the reference C
+    implementation of 'Roaring' bitmaps (Lemire et al. 2018
+    <doi:10.1002/spe.2560>). A bitmap answers membership, cardinality,
+    rank, select and the set operations without materialising a vector,
+    and serialises to the portable 'Roaring' format shared by
+    implementations in 'Java', 'Go', 'Rust' and 'Python'. To R code a
+    bitmap behaves as a sorted vector without duplicates.
 License: MIT + file LICENSE
-Encoding: UTF-8
-Roxygen: list(markdown = TRUE)
-RoxygenNote: 8.1.0
-Suggests: 
+URL: https://pedrobtz.github.io/zuroar/, https://github.com/pedrobtz/zuroar
+BugReports: https://github.com/pedrobtz/zuroar/issues
+Depends:
+    R (>= 4.1)
+Suggests:
     testthat (>= 3.0.0)
 Config/Needs/website: knitr, rmarkdown
 Config/testthat/edition: 3
-URL: https://pedrobtz.github.io/zuroar/
+Encoding: UTF-8
+Language: en-GB
+Roxygen: list(markdown = TRUE)
+Config/roxygen2/version: 8.1.0

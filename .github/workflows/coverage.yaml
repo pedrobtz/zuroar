@@ -13,7 +13,7 @@ concurrency:
 
 jobs:
   coverage:
-    uses: pedrobtz/r-actions/.github/workflows/coverage.yml@v1
+    uses: pedrobtz/r-actions/.github/workflows/coverage.yml@4062705ecc3560e85ec8045b30d0e9951fa447a2 # v1 (v1.30.0)
     with:
       badge-branch: gh-pages
       badge-path: badges/coverage.svg
