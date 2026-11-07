@@ -115,3 +115,6 @@
   [`roar64_unserialize()`](https://pedrobtz.github.io/zuroar/reference/roar_serialize.md)
   reads its portable bytes. Every change to a `zuroar64` copies it,
   since CRoaring’s 64-bit bitmaps have no copy-on-write.
+
+- A README, the Get started article and a benchmarks article that
+  measures time and memory against base R and the bit package.

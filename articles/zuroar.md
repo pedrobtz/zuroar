@@ -47,8 +47,11 @@ length(x)
 x[[2]]
 #> [1] 7
 x[2:3]
+#> <zuroar> 2 values in [7, 9]: 7 9
 head(y, 3)
+#> <zuroar> 3 values in [1, 3]: 1 2 3
 c(x, roar(42L)) + 10
+#> <zuroar> 5 values in [11, 100010]: 11 17 19 52 100010
 ```
 
 ## Ask questions
@@ -84,32 +87,66 @@ subset test. Counts and similarities need no intermediate bitmap.
 ``` r
 
 x | y
+#> <zuroar> 999,990 values in [1, 1000000]: 1 2 3 4 5 6 7 8 9 20 ...
 x & y
+#> <zuroar> 4 values in [1, 100000]: 1 7 9 100000
 x <= y
+#> [1] TRUE
 roar_cardinality(x, y, op = "and")
+#> [1] 4
 roar_jaccard(x, y)
+#> [1] 4.00004e-06
 ```
 
 ## Save and share
 
+A bitmap survives [`saveRDS()`](https://rdrr.io/r/base/readRDS.html) and
+[`readRDS()`](https://rdrr.io/r/base/readRDS.html) like any R object,
+stored compressed:
+
+``` r
+
+path <- tempfile(fileext = ".rds")
+saveRDS(y, path)
+readRDS(path) == y
+#> [1] TRUE
+```
+
 [`roar_serialize()`](https://pedrobtz.github.io/zuroar/reference/roar_serialize.md)
-writes the portable format as a raw vector, and
+writes the portable Roaring format as a raw vector, for other programs
+and other Roaring libraries, and
 [`roar_unserialize()`](https://pedrobtz.github.io/zuroar/reference/roar_serialize.md)
-checks bytes before reading them. A bitmap doesn’t survive
-[`saveRDS()`](https://rdrr.io/r/base/readRDS.html) on its own;
-[`roar_serial_config()`](https://pedrobtz.github.io/zuroar/reference/roar_serial_config.md)
-lets it travel to mirai workers.
+checks bytes before reading them.
 
 ``` r
 
 b <- roar_serialize(x)
 x2 <- roar_unserialize(b)
-mirai::daemons(2, serial = roar_serial_config())
+x2 == x
+#> [1] TRUE
+```
+
+Bitmaps are sent to and from `mirai` workers like any other value. The
+64-bit class,
+[`roar64()`](https://pedrobtz.github.io/zuroar/reference/roar64.md),
+needs
+[`roar_serial_config()`](https://pedrobtz.github.io/zuroar/reference/roar_serial_config.md)
+for that; the 32-bit one works with or without it.
+
+``` r
+
+mirai::daemons(1)
+m <- mirai::mirai(zuroar::roar_add(x, 8), x = x)
+mirai::call_mirai(m)$data
+#> <zuroar> 5 values in [1, 100000]: 1 7 8 9 100000
+mirai::daemons(0)
 ```
 
 ## Next
 
 The reference index documents every function, including the 64-bit
 class,
-[`roar64()`](https://pedrobtz.github.io/zuroar/reference/roar64.md). An
-article with benchmarks against base R and the bit package is planned.
+[`roar64()`](https://pedrobtz.github.io/zuroar/reference/roar64.md). The
+[benchmarks
+article](https://pedrobtz.github.io/zuroar/articles/benchmarks.html)
+measures time and memory against base R and the bit package.

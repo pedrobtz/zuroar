@@ -17,6 +17,10 @@
     <div id="navbar" class="collapse navbar-collapse ms-3">
       <ul class="navbar-nav me-auto"><li class="nav-item"><a class="nav-link" href="../articles/zuroar.html">Get started</a></li>
 <li class="nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
+<li class="nav-item dropdown">
+  <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
+  <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/benchmarks.html">Benchmarks</a></li>
+  </ul></li>
 <li class="active nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
  <input class="form-control" type="search" name="search-input" id="search-input" autocomplete="off" aria-label="Search site" placeholder="Search for" data-search-index="../search.json"></form></li>
@@ -47,6 +51,7 @@
 <li><p><code><a href="../reference/roar_optimize.html">roar_optimize()</a></code>, <code><a href="../reference/roar_optimize.html">roar_stats()</a></code> and <code><a href="../reference/roar_optimize.html">roar_size()</a></code> show and tune how a bitmap is stored.</p></li>
 <li><p><code><a href="../reference/roar_serialize.html">roar_serialize()</a></code> and <code><a href="../reference/roar_serialize.html">roar_unserialize()</a></code> write and read the portable Roaring format shared with Java, Go, Rust and Python. Reading treats the bytes as untrusted: bounded, validated, and a <code>zuroar_error_format</code> on anything corrupt, including a corrupt <code>.rds</code> file. <code><a href="../reference/roar_serial_config.html">roar_serial_config()</a></code> configures <code>mirai</code> daemons for the 64-bit class to come; 32-bit bitmaps need no configuration.</p></li>
 <li><p><code><a href="../reference/roar64.html">roar64()</a></code> and <code><a href="../reference/roar64.html">roar64_range()</a></code> build a <code>zuroar64</code>, a bitmap of values up to 2^64 - 1 that crosses into R as decimal text or doubles below 2^53. It has the 32-bit API; <code><a href="../reference/roar64_length.html">roar64_length()</a></code> gives its exact size and <code><a href="../reference/roar_serialize.html">roar64_unserialize()</a></code> reads its portable bytes. Every change to a <code>zuroar64</code> copies it, since CRoaring’s 64-bit bitmaps have no copy-on-write.</p></li>
+<li><p>A README, the Get started article and a benchmarks article that measures time and memory against base R and the bit package.</p></li>
 </ul></div>
   </main></div>
 

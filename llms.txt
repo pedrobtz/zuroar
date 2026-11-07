@@ -1,11 +1,41 @@
 # zuroar
 
-The goal of zuroar is to …
+Large sets of whole numbers are everywhere: the ids of users who did
+something, the rows that pass a filter, the documents that contain a
+word. In R they are usually integer vectors, which cost four or eight
+bytes a value and are hashed or sorted again for every
+[`union()`](https://rdrr.io/r/base/sets.html) or `%in%`.
+
+zuroar keeps such sets compressed, as [Roaring
+bitmaps](https://roaringbitmap.org/), through a bundled copy of
+[CRoaring](https://github.com/RoaringBitmap/CRoaring), the reference C
+implementation.
+
+- **Compressed.** Each chunk of 65,536 values is stored as a sorted
+  array, a bitset or a list of runs, whichever is smallest, and set
+  operations work on those containers directly.
+- **Exact.** A bitmap holds whole numbers from 0 to 2^32 - 1, or up to
+  2^64 - 1 with
+  [`roar64()`](https://pedrobtz.github.io/zuroar/reference/roar64.md).
+  Nothing is silently turned into `NA` or an inexact double: a value
+  that does not fit is an error.
+- **A sorted vector to R code.**
+  [`length()`](https://rdrr.io/r/base/length.html), `x[i]`,
+  [`head()`](https://rdrr.io/r/utils/head.html),
+  [`min()`](https://rdrr.io/r/base/Extremes.html), `%in%` and
+  [`c()`](https://rdrr.io/r/base/c.html) behave as they would on
+  `sort(unique(v))`, while the values stay compressed. A bitmap survives
+  [`saveRDS()`](https://rdrr.io/r/base/readRDS.html), travels to
+  parallel workers and fits in a data-frame column.
+- **Ordered questions.** Rank, select, and the next or previous value
+  are answered without expanding the set.
+- **A shared format.** Bitmaps serialise to the portable Roaring format
+  that Java, Go, Rust and Python implementations read and write, and
+  untrusted bytes are checked before they are used.
 
 ## Installation
 
-You can install the development version of zuroar from
-[GitHub](https://github.com/) with:
+zuroar is not on CRAN yet. Install the development version from GitHub:
 
 ``` r
 
@@ -13,68 +43,147 @@ You can install the development version of zuroar from
 pak::pak("pedrobtz/zuroar")
 ```
 
-## Example
+CRoaring compiles AVX2 and AVX-512 code paths and picks one at run time,
+so the same build runs on any x86-64 or arm64 processor;
+[`zuroar_info()`](https://pedrobtz.github.io/zuroar/reference/zuroar_info.md)
+says which paths were compiled and which this processor offers. To build
+the portable scalar code only, add this line to `~/.R/Makevars` before
+installing:
 
-This is a basic example which shows you how to solve a common problem:
+``` make
+CPPFLAGS += -DROARING_DISABLE_X64
+```
+
+## Usage
 
 ``` r
 
 library(zuroar)
-## basic example code
 ```
+
+Say we have the ids of the users who visited a site on two days.
+[`roar()`](https://pedrobtz.github.io/zuroar/reference/roar.md) builds a
+bitmap from whole numbers in any order, with or without duplicates, and
+prints its size, range and first values.
+
+``` r
+
+monday <- roar(c(17, 3, 4096, 3, 70000, 2^31))
+tuesday <- roar_add(roar_range(1, 20), 70000)
+monday
+#> <zuroar> 5 values in [3, 2147483648]: 3 17 4096 70000 2147483648
+tuesday
+#> <zuroar> 21 values in [1, 70000]: 1 2 3 4 5 6 7 8 9 10 ...
+```
+
+Set operations are operators: `&` is the intersection, `|` the union and
+`<=` the subset test. Counts need no intermediate bitmap.
+
+``` r
+
+monday & tuesday
+#> <zuroar> 3 values in [3, 70000]: 3 17 70000
+monday | tuesday
+#> <zuroar> 23 values in [1, 2147483648]: 1 2 3 4 5 6 7 8 9 10 ...
+roar(c(3, 17)) <= monday
+#> [1] TRUE
+roar_cardinality(monday, tuesday, op = "or")
+#> [1] 23
+```
+
+A bitmap answers membership and order questions directly: which values
+it holds, how many are at or below a number, which is the third
+smallest, and which comes next.
+
+``` r
+
+roar_contains(monday, c(17, 18))
+#> [1]  TRUE FALSE
+roar_rank(monday, 4096)
+#> [1] 3
+monday[[3]]
+#> [1] 4096
+roar_next(monday, 5000)
+#> [1] 70000
+```
+
+Contiguous stretches are stored as runs, so a million values take a few
+hundred bytes.
+[`roar_size()`](https://pedrobtz.github.io/zuroar/reference/roar_optimize.md)
+is the size of the portable byte form that
+[`roar_serialize()`](https://pedrobtz.github.io/zuroar/reference/roar_serialize.md)
+writes and other Roaring libraries read.
+
+``` r
+
+everyone <- roar_range(1, 1e6)
+length(everyone)
+#> [1] 1000000
+roar_size(everyone)
+#> [1] 230
+b <- roar_serialize(monday)
+roar_unserialize(b) == monday
+#> [1] TRUE
+```
+
+Functions that take or return bitmaps start with `roar_`; those that
+exist only for the 64-bit class start with `roar64_`.
+
+## Learn more
+
+- [Get started](https://pedrobtz.github.io/zuroar/articles/zuroar.html)
+  walks through building, querying, combining and saving bitmaps.
+- [Benchmarks](https://pedrobtz.github.io/zuroar/articles/benchmarks.html)
+  measures time and memory against base R and the bit package.
+- The [reference index](https://pedrobtz.github.io/zuroar/reference/)
+  documents every function.
+
+## Related work
+
+zuroar wraps [CRoaring](https://github.com/RoaringBitmap/CRoaring) 5.4.0
+and follows the [Roaring format
+specification](https://github.com/RoaringBitmap/RoaringFormatSpec). Its
+API was checked against
+[pyroaring](https://github.com/Ezibenroc/PyRoaringBitMap), and its tests
+read bytes written by pyroaring and Java’s
+[RoaringBitmap](https://github.com/RoaringBitmap/RoaringBitmap). The
+[bit](https://cran.r-project.org/package=bit) package is the better
+choice for a boolean vector of known length.
 
 # Package index
 
-## All functions
+## Build a bitmap
 
-- [`c(`*`<zuroar>`*`)`](https://pedrobtz.github.io/zuroar/reference/c.zuroar.md)
-  [`c(`*`<zuroar64>`*`)`](https://pedrobtz.github.io/zuroar/reference/c.zuroar.md)
-  : Combine bitmaps
 - [`roar()`](https://pedrobtz.github.io/zuroar/reference/roar.md)
   [`roar_range()`](https://pedrobtz.github.io/zuroar/reference/roar.md)
   : Build a bitmap
 - [`roar64()`](https://pedrobtz.github.io/zuroar/reference/roar64.md)
   [`roar64_range()`](https://pedrobtz.github.io/zuroar/reference/roar64.md)
   : Build a 64-bit bitmap
-- [`roar64_length()`](https://pedrobtz.github.io/zuroar/reference/roar64_length.md)
-  : The exact size of a 64-bit bitmap
 - [`roar_add()`](https://pedrobtz.github.io/zuroar/reference/roar_add.md)
   [`roar_remove()`](https://pedrobtz.github.io/zuroar/reference/roar_add.md)
   : Add or remove values
-- [`roar_cardinality()`](https://pedrobtz.github.io/zuroar/reference/roar_cardinality.md)
-  [`roar_jaccard()`](https://pedrobtz.github.io/zuroar/reference/roar_cardinality.md)
-  [`roar_intersects()`](https://pedrobtz.github.io/zuroar/reference/roar_cardinality.md)
-  [`roar_disjoint()`](https://pedrobtz.github.io/zuroar/reference/roar_cardinality.md)
-  : Compare sets without building them
-- [`roar_contains()`](https://pedrobtz.github.io/zuroar/reference/roar_contains.md)
-  : Test membership
-- [`roar_optimize()`](https://pedrobtz.github.io/zuroar/reference/roar_optimize.md)
-  [`roar_stats()`](https://pedrobtz.github.io/zuroar/reference/roar_optimize.md)
-  [`roar_size()`](https://pedrobtz.github.io/zuroar/reference/roar_optimize.md)
-  : Storage
-- [`roar_rank()`](https://pedrobtz.github.io/zuroar/reference/roar_rank.md)
-  [`roar_select()`](https://pedrobtz.github.io/zuroar/reference/roar_rank.md)
-  [`roar_next()`](https://pedrobtz.github.io/zuroar/reference/roar_rank.md)
-  [`roar_prev()`](https://pedrobtz.github.io/zuroar/reference/roar_rank.md)
-  [`roar_count()`](https://pedrobtz.github.io/zuroar/reference/roar_rank.md)
-  [`roar_contains_range()`](https://pedrobtz.github.io/zuroar/reference/roar_rank.md)
-  : Ordered queries
-- [`roar_serial_config()`](https://pedrobtz.github.io/zuroar/reference/roar_serial_config.md)
-  : Send bitmaps to mirai workers
-- [`roar_serialize()`](https://pedrobtz.github.io/zuroar/reference/roar_serialize.md)
-  [`roar_unserialize()`](https://pedrobtz.github.io/zuroar/reference/roar_serialize.md)
-  [`roar64_unserialize()`](https://pedrobtz.github.io/zuroar/reference/roar_serialize.md)
-  : Serialise a bitmap
-- [`roar_shift()`](https://pedrobtz.github.io/zuroar/reference/roar_shift.md)
-  : Shift every value
-- [`roar_union()`](https://pedrobtz.github.io/zuroar/reference/roar_union.md)
-  [`roar_intersect()`](https://pedrobtz.github.io/zuroar/reference/roar_union.md)
-  [`roar_xor()`](https://pedrobtz.github.io/zuroar/reference/roar_union.md)
-  [`roar_andnot()`](https://pedrobtz.github.io/zuroar/reference/roar_union.md)
-  [`roar_flip()`](https://pedrobtz.github.io/zuroar/reference/roar_union.md)
-  : Set operations by name
-- [`roar_values()`](https://pedrobtz.github.io/zuroar/reference/roar_values.md)
-  : Extract a bounded number of values
+
+## A bitmap as a sorted vector
+
+- [`as.data.frame(`*`<zuroar>`*`)`](https://pedrobtz.github.io/zuroar/reference/zuroar-vector.md)
+  [`mtfrm(`*`<zuroar>`*`)`](https://pedrobtz.github.io/zuroar/reference/zuroar-vector.md)
+  [`Summary(`*`<zuroar>`*`)`](https://pedrobtz.github.io/zuroar/reference/zuroar-vector.md)
+  [`as.double(`*`<zuroar>`*`)`](https://pedrobtz.github.io/zuroar/reference/zuroar-vector.md)
+  [`as.numeric(`*`<zuroar>`*`)`](https://pedrobtz.github.io/zuroar/reference/zuroar-vector.md)
+  [`as.character(`*`<zuroar>`*`)`](https://pedrobtz.github.io/zuroar/reference/zuroar-vector.md)
+  [`as.integer(`*`<zuroar>`*`)`](https://pedrobtz.github.io/zuroar/reference/zuroar-vector.md)
+  [`format(`*`<zuroar>`*`)`](https://pedrobtz.github.io/zuroar/reference/zuroar-vector.md)
+  [`print(`*`<zuroar>`*`)`](https://pedrobtz.github.io/zuroar/reference/zuroar-vector.md)
+  [`length(`*`<zuroar64>`*`)`](https://pedrobtz.github.io/zuroar/reference/zuroar-vector.md)
+  [`Summary(`*`<zuroar64>`*`)`](https://pedrobtz.github.io/zuroar/reference/zuroar-vector.md)
+  [`as.character(`*`<zuroar64>`*`)`](https://pedrobtz.github.io/zuroar/reference/zuroar-vector.md)
+  [`as.double(`*`<zuroar64>`*`)`](https://pedrobtz.github.io/zuroar/reference/zuroar-vector.md)
+  [`as.numeric(`*`<zuroar64>`*`)`](https://pedrobtz.github.io/zuroar/reference/zuroar-vector.md)
+  [`as.integer(`*`<zuroar64>`*`)`](https://pedrobtz.github.io/zuroar/reference/zuroar-vector.md)
+  [`format(`*`<zuroar64>`*`)`](https://pedrobtz.github.io/zuroar/reference/zuroar-vector.md)
+  [`print(`*`<zuroar64>`*`)`](https://pedrobtz.github.io/zuroar/reference/zuroar-vector.md)
+  : A bitmap as a sorted vector
 - [`` `[`( ``*`<zuroar>`*`)`](https://pedrobtz.github.io/zuroar/reference/zuroar-index.md)
   [`` `[[`( ``*`<zuroar>`*`)`](https://pedrobtz.github.io/zuroar/reference/zuroar-index.md)
   [`head(`*`<zuroar>`*`)`](https://pedrobtz.github.io/zuroar/reference/zuroar-index.md)
@@ -94,33 +203,73 @@ library(zuroar)
   [`` `[<-`( ``*`<zuroar64>`*`)`](https://pedrobtz.github.io/zuroar/reference/zuroar-index.md)
   [`` `[[<-`( ``*`<zuroar64>`*`)`](https://pedrobtz.github.io/zuroar/reference/zuroar-index.md)
   : Positions in a bitmap
+- [`c(`*`<zuroar>`*`)`](https://pedrobtz.github.io/zuroar/reference/c.zuroar.md)
+  [`c(`*`<zuroar64>`*`)`](https://pedrobtz.github.io/zuroar/reference/c.zuroar.md)
+  : Combine bitmaps
+
+## Queries
+
+- [`roar_contains()`](https://pedrobtz.github.io/zuroar/reference/roar_contains.md)
+  : Test membership
+- [`roar_rank()`](https://pedrobtz.github.io/zuroar/reference/roar_rank.md)
+  [`roar_select()`](https://pedrobtz.github.io/zuroar/reference/roar_rank.md)
+  [`roar_next()`](https://pedrobtz.github.io/zuroar/reference/roar_rank.md)
+  [`roar_prev()`](https://pedrobtz.github.io/zuroar/reference/roar_rank.md)
+  [`roar_count()`](https://pedrobtz.github.io/zuroar/reference/roar_rank.md)
+  [`roar_contains_range()`](https://pedrobtz.github.io/zuroar/reference/roar_rank.md)
+  : Ordered queries
+- [`roar_values()`](https://pedrobtz.github.io/zuroar/reference/roar_values.md)
+  : Extract a bounded number of values
+- [`roar64_length()`](https://pedrobtz.github.io/zuroar/reference/roar64_length.md)
+  : The exact size of a 64-bit bitmap
+
+## Set algebra
+
 - [`Ops(`*`<zuroar>`*`)`](https://pedrobtz.github.io/zuroar/reference/zuroar-ops.md)
   [`Ops(`*`<zuroar64>`*`)`](https://pedrobtz.github.io/zuroar/reference/zuroar-ops.md)
   : Operators on bitmaps
-- [`as.data.frame(`*`<zuroar>`*`)`](https://pedrobtz.github.io/zuroar/reference/zuroar-vector.md)
-  [`mtfrm(`*`<zuroar>`*`)`](https://pedrobtz.github.io/zuroar/reference/zuroar-vector.md)
-  [`Summary(`*`<zuroar>`*`)`](https://pedrobtz.github.io/zuroar/reference/zuroar-vector.md)
-  [`as.double(`*`<zuroar>`*`)`](https://pedrobtz.github.io/zuroar/reference/zuroar-vector.md)
-  [`as.numeric(`*`<zuroar>`*`)`](https://pedrobtz.github.io/zuroar/reference/zuroar-vector.md)
-  [`as.character(`*`<zuroar>`*`)`](https://pedrobtz.github.io/zuroar/reference/zuroar-vector.md)
-  [`as.integer(`*`<zuroar>`*`)`](https://pedrobtz.github.io/zuroar/reference/zuroar-vector.md)
-  [`format(`*`<zuroar>`*`)`](https://pedrobtz.github.io/zuroar/reference/zuroar-vector.md)
-  [`print(`*`<zuroar>`*`)`](https://pedrobtz.github.io/zuroar/reference/zuroar-vector.md)
-  [`length(`*`<zuroar64>`*`)`](https://pedrobtz.github.io/zuroar/reference/zuroar-vector.md)
-  [`Summary(`*`<zuroar64>`*`)`](https://pedrobtz.github.io/zuroar/reference/zuroar-vector.md)
-  [`as.character(`*`<zuroar64>`*`)`](https://pedrobtz.github.io/zuroar/reference/zuroar-vector.md)
-  [`as.double(`*`<zuroar64>`*`)`](https://pedrobtz.github.io/zuroar/reference/zuroar-vector.md)
-  [`as.numeric(`*`<zuroar64>`*`)`](https://pedrobtz.github.io/zuroar/reference/zuroar-vector.md)
-  [`as.integer(`*`<zuroar64>`*`)`](https://pedrobtz.github.io/zuroar/reference/zuroar-vector.md)
-  [`format(`*`<zuroar64>`*`)`](https://pedrobtz.github.io/zuroar/reference/zuroar-vector.md)
-  [`print(`*`<zuroar64>`*`)`](https://pedrobtz.github.io/zuroar/reference/zuroar-vector.md)
-  : A bitmap as a sorted vector
+- [`roar_union()`](https://pedrobtz.github.io/zuroar/reference/roar_union.md)
+  [`roar_intersect()`](https://pedrobtz.github.io/zuroar/reference/roar_union.md)
+  [`roar_xor()`](https://pedrobtz.github.io/zuroar/reference/roar_union.md)
+  [`roar_andnot()`](https://pedrobtz.github.io/zuroar/reference/roar_union.md)
+  [`roar_flip()`](https://pedrobtz.github.io/zuroar/reference/roar_union.md)
+  : Set operations by name
+- [`roar_cardinality()`](https://pedrobtz.github.io/zuroar/reference/roar_cardinality.md)
+  [`roar_jaccard()`](https://pedrobtz.github.io/zuroar/reference/roar_cardinality.md)
+  [`roar_intersects()`](https://pedrobtz.github.io/zuroar/reference/roar_cardinality.md)
+  [`roar_disjoint()`](https://pedrobtz.github.io/zuroar/reference/roar_cardinality.md)
+  : Compare sets without building them
+- [`roar_shift()`](https://pedrobtz.github.io/zuroar/reference/roar_shift.md)
+  : Shift every value
+
+## Storage and bytes
+
+- [`roar_optimize()`](https://pedrobtz.github.io/zuroar/reference/roar_optimize.md)
+  [`roar_stats()`](https://pedrobtz.github.io/zuroar/reference/roar_optimize.md)
+  [`roar_size()`](https://pedrobtz.github.io/zuroar/reference/roar_optimize.md)
+  : Storage
+- [`roar_serialize()`](https://pedrobtz.github.io/zuroar/reference/roar_serialize.md)
+  [`roar_unserialize()`](https://pedrobtz.github.io/zuroar/reference/roar_serialize.md)
+  [`roar64_unserialize()`](https://pedrobtz.github.io/zuroar/reference/roar_serialize.md)
+  : Serialise a bitmap
+- [`roar_serial_config()`](https://pedrobtz.github.io/zuroar/reference/roar_serial_config.md)
+  : Send bitmaps to mirai workers
+
+## The build
+
 - [`zuroar_info()`](https://pedrobtz.github.io/zuroar/reference/zuroar_info.md)
   : What zuroar was built with
 
+## Conditions
+
+- [`zuroar-conditions`](https://pedrobtz.github.io/zuroar/reference/zuroar-conditions.md)
+  [`zuroar_error`](https://pedrobtz.github.io/zuroar/reference/zuroar-conditions.md)
+  : Conditions signalled by zuroar
+
 # Articles
 
-### All vignettes
+### Articles
 
 - [Get started with
   zuroar](https://pedrobtz.github.io/zuroar/articles/zuroar.md):
+- [Benchmarks](https://pedrobtz.github.io/zuroar/articles/benchmarks.md):

@@ -1,55 +1,37 @@
 # Package index
 
-## All functions
+## Build a bitmap
 
-- [`c(`*`<zuroar>`*`)`](https://pedrobtz.github.io/zuroar/reference/c.zuroar.md)
-  [`c(`*`<zuroar64>`*`)`](https://pedrobtz.github.io/zuroar/reference/c.zuroar.md)
-  : Combine bitmaps
 - [`roar()`](https://pedrobtz.github.io/zuroar/reference/roar.md)
   [`roar_range()`](https://pedrobtz.github.io/zuroar/reference/roar.md)
   : Build a bitmap
 - [`roar64()`](https://pedrobtz.github.io/zuroar/reference/roar64.md)
   [`roar64_range()`](https://pedrobtz.github.io/zuroar/reference/roar64.md)
   : Build a 64-bit bitmap
-- [`roar64_length()`](https://pedrobtz.github.io/zuroar/reference/roar64_length.md)
-  : The exact size of a 64-bit bitmap
 - [`roar_add()`](https://pedrobtz.github.io/zuroar/reference/roar_add.md)
   [`roar_remove()`](https://pedrobtz.github.io/zuroar/reference/roar_add.md)
   : Add or remove values
-- [`roar_cardinality()`](https://pedrobtz.github.io/zuroar/reference/roar_cardinality.md)
-  [`roar_jaccard()`](https://pedrobtz.github.io/zuroar/reference/roar_cardinality.md)
-  [`roar_intersects()`](https://pedrobtz.github.io/zuroar/reference/roar_cardinality.md)
-  [`roar_disjoint()`](https://pedrobtz.github.io/zuroar/reference/roar_cardinality.md)
-  : Compare sets without building them
-- [`roar_contains()`](https://pedrobtz.github.io/zuroar/reference/roar_contains.md)
-  : Test membership
-- [`roar_optimize()`](https://pedrobtz.github.io/zuroar/reference/roar_optimize.md)
-  [`roar_stats()`](https://pedrobtz.github.io/zuroar/reference/roar_optimize.md)
-  [`roar_size()`](https://pedrobtz.github.io/zuroar/reference/roar_optimize.md)
-  : Storage
-- [`roar_rank()`](https://pedrobtz.github.io/zuroar/reference/roar_rank.md)
-  [`roar_select()`](https://pedrobtz.github.io/zuroar/reference/roar_rank.md)
-  [`roar_next()`](https://pedrobtz.github.io/zuroar/reference/roar_rank.md)
-  [`roar_prev()`](https://pedrobtz.github.io/zuroar/reference/roar_rank.md)
-  [`roar_count()`](https://pedrobtz.github.io/zuroar/reference/roar_rank.md)
-  [`roar_contains_range()`](https://pedrobtz.github.io/zuroar/reference/roar_rank.md)
-  : Ordered queries
-- [`roar_serial_config()`](https://pedrobtz.github.io/zuroar/reference/roar_serial_config.md)
-  : Send bitmaps to mirai workers
-- [`roar_serialize()`](https://pedrobtz.github.io/zuroar/reference/roar_serialize.md)
-  [`roar_unserialize()`](https://pedrobtz.github.io/zuroar/reference/roar_serialize.md)
-  [`roar64_unserialize()`](https://pedrobtz.github.io/zuroar/reference/roar_serialize.md)
-  : Serialise a bitmap
-- [`roar_shift()`](https://pedrobtz.github.io/zuroar/reference/roar_shift.md)
-  : Shift every value
-- [`roar_union()`](https://pedrobtz.github.io/zuroar/reference/roar_union.md)
-  [`roar_intersect()`](https://pedrobtz.github.io/zuroar/reference/roar_union.md)
-  [`roar_xor()`](https://pedrobtz.github.io/zuroar/reference/roar_union.md)
-  [`roar_andnot()`](https://pedrobtz.github.io/zuroar/reference/roar_union.md)
-  [`roar_flip()`](https://pedrobtz.github.io/zuroar/reference/roar_union.md)
-  : Set operations by name
-- [`roar_values()`](https://pedrobtz.github.io/zuroar/reference/roar_values.md)
-  : Extract a bounded number of values
+
+## A bitmap as a sorted vector
+
+- [`as.data.frame(`*`<zuroar>`*`)`](https://pedrobtz.github.io/zuroar/reference/zuroar-vector.md)
+  [`mtfrm(`*`<zuroar>`*`)`](https://pedrobtz.github.io/zuroar/reference/zuroar-vector.md)
+  [`Summary(`*`<zuroar>`*`)`](https://pedrobtz.github.io/zuroar/reference/zuroar-vector.md)
+  [`as.double(`*`<zuroar>`*`)`](https://pedrobtz.github.io/zuroar/reference/zuroar-vector.md)
+  [`as.numeric(`*`<zuroar>`*`)`](https://pedrobtz.github.io/zuroar/reference/zuroar-vector.md)
+  [`as.character(`*`<zuroar>`*`)`](https://pedrobtz.github.io/zuroar/reference/zuroar-vector.md)
+  [`as.integer(`*`<zuroar>`*`)`](https://pedrobtz.github.io/zuroar/reference/zuroar-vector.md)
+  [`format(`*`<zuroar>`*`)`](https://pedrobtz.github.io/zuroar/reference/zuroar-vector.md)
+  [`print(`*`<zuroar>`*`)`](https://pedrobtz.github.io/zuroar/reference/zuroar-vector.md)
+  [`length(`*`<zuroar64>`*`)`](https://pedrobtz.github.io/zuroar/reference/zuroar-vector.md)
+  [`Summary(`*`<zuroar64>`*`)`](https://pedrobtz.github.io/zuroar/reference/zuroar-vector.md)
+  [`as.character(`*`<zuroar64>`*`)`](https://pedrobtz.github.io/zuroar/reference/zuroar-vector.md)
+  [`as.double(`*`<zuroar64>`*`)`](https://pedrobtz.github.io/zuroar/reference/zuroar-vector.md)
+  [`as.numeric(`*`<zuroar64>`*`)`](https://pedrobtz.github.io/zuroar/reference/zuroar-vector.md)
+  [`as.integer(`*`<zuroar64>`*`)`](https://pedrobtz.github.io/zuroar/reference/zuroar-vector.md)
+  [`format(`*`<zuroar64>`*`)`](https://pedrobtz.github.io/zuroar/reference/zuroar-vector.md)
+  [`print(`*`<zuroar64>`*`)`](https://pedrobtz.github.io/zuroar/reference/zuroar-vector.md)
+  : A bitmap as a sorted vector
 - [`` `[`( ``*`<zuroar>`*`)`](https://pedrobtz.github.io/zuroar/reference/zuroar-index.md)
   [`` `[[`( ``*`<zuroar>`*`)`](https://pedrobtz.github.io/zuroar/reference/zuroar-index.md)
   [`head(`*`<zuroar>`*`)`](https://pedrobtz.github.io/zuroar/reference/zuroar-index.md)
@@ -69,26 +51,65 @@
   [`` `[<-`( ``*`<zuroar64>`*`)`](https://pedrobtz.github.io/zuroar/reference/zuroar-index.md)
   [`` `[[<-`( ``*`<zuroar64>`*`)`](https://pedrobtz.github.io/zuroar/reference/zuroar-index.md)
   : Positions in a bitmap
+- [`c(`*`<zuroar>`*`)`](https://pedrobtz.github.io/zuroar/reference/c.zuroar.md)
+  [`c(`*`<zuroar64>`*`)`](https://pedrobtz.github.io/zuroar/reference/c.zuroar.md)
+  : Combine bitmaps
+
+## Queries
+
+- [`roar_contains()`](https://pedrobtz.github.io/zuroar/reference/roar_contains.md)
+  : Test membership
+- [`roar_rank()`](https://pedrobtz.github.io/zuroar/reference/roar_rank.md)
+  [`roar_select()`](https://pedrobtz.github.io/zuroar/reference/roar_rank.md)
+  [`roar_next()`](https://pedrobtz.github.io/zuroar/reference/roar_rank.md)
+  [`roar_prev()`](https://pedrobtz.github.io/zuroar/reference/roar_rank.md)
+  [`roar_count()`](https://pedrobtz.github.io/zuroar/reference/roar_rank.md)
+  [`roar_contains_range()`](https://pedrobtz.github.io/zuroar/reference/roar_rank.md)
+  : Ordered queries
+- [`roar_values()`](https://pedrobtz.github.io/zuroar/reference/roar_values.md)
+  : Extract a bounded number of values
+- [`roar64_length()`](https://pedrobtz.github.io/zuroar/reference/roar64_length.md)
+  : The exact size of a 64-bit bitmap
+
+## Set algebra
+
 - [`Ops(`*`<zuroar>`*`)`](https://pedrobtz.github.io/zuroar/reference/zuroar-ops.md)
   [`Ops(`*`<zuroar64>`*`)`](https://pedrobtz.github.io/zuroar/reference/zuroar-ops.md)
   : Operators on bitmaps
-- [`as.data.frame(`*`<zuroar>`*`)`](https://pedrobtz.github.io/zuroar/reference/zuroar-vector.md)
-  [`mtfrm(`*`<zuroar>`*`)`](https://pedrobtz.github.io/zuroar/reference/zuroar-vector.md)
-  [`Summary(`*`<zuroar>`*`)`](https://pedrobtz.github.io/zuroar/reference/zuroar-vector.md)
-  [`as.double(`*`<zuroar>`*`)`](https://pedrobtz.github.io/zuroar/reference/zuroar-vector.md)
-  [`as.numeric(`*`<zuroar>`*`)`](https://pedrobtz.github.io/zuroar/reference/zuroar-vector.md)
-  [`as.character(`*`<zuroar>`*`)`](https://pedrobtz.github.io/zuroar/reference/zuroar-vector.md)
-  [`as.integer(`*`<zuroar>`*`)`](https://pedrobtz.github.io/zuroar/reference/zuroar-vector.md)
-  [`format(`*`<zuroar>`*`)`](https://pedrobtz.github.io/zuroar/reference/zuroar-vector.md)
-  [`print(`*`<zuroar>`*`)`](https://pedrobtz.github.io/zuroar/reference/zuroar-vector.md)
-  [`length(`*`<zuroar64>`*`)`](https://pedrobtz.github.io/zuroar/reference/zuroar-vector.md)
-  [`Summary(`*`<zuroar64>`*`)`](https://pedrobtz.github.io/zuroar/reference/zuroar-vector.md)
-  [`as.character(`*`<zuroar64>`*`)`](https://pedrobtz.github.io/zuroar/reference/zuroar-vector.md)
-  [`as.double(`*`<zuroar64>`*`)`](https://pedrobtz.github.io/zuroar/reference/zuroar-vector.md)
-  [`as.numeric(`*`<zuroar64>`*`)`](https://pedrobtz.github.io/zuroar/reference/zuroar-vector.md)
-  [`as.integer(`*`<zuroar64>`*`)`](https://pedrobtz.github.io/zuroar/reference/zuroar-vector.md)
-  [`format(`*`<zuroar64>`*`)`](https://pedrobtz.github.io/zuroar/reference/zuroar-vector.md)
-  [`print(`*`<zuroar64>`*`)`](https://pedrobtz.github.io/zuroar/reference/zuroar-vector.md)
-  : A bitmap as a sorted vector
+- [`roar_union()`](https://pedrobtz.github.io/zuroar/reference/roar_union.md)
+  [`roar_intersect()`](https://pedrobtz.github.io/zuroar/reference/roar_union.md)
+  [`roar_xor()`](https://pedrobtz.github.io/zuroar/reference/roar_union.md)
+  [`roar_andnot()`](https://pedrobtz.github.io/zuroar/reference/roar_union.md)
+  [`roar_flip()`](https://pedrobtz.github.io/zuroar/reference/roar_union.md)
+  : Set operations by name
+- [`roar_cardinality()`](https://pedrobtz.github.io/zuroar/reference/roar_cardinality.md)
+  [`roar_jaccard()`](https://pedrobtz.github.io/zuroar/reference/roar_cardinality.md)
+  [`roar_intersects()`](https://pedrobtz.github.io/zuroar/reference/roar_cardinality.md)
+  [`roar_disjoint()`](https://pedrobtz.github.io/zuroar/reference/roar_cardinality.md)
+  : Compare sets without building them
+- [`roar_shift()`](https://pedrobtz.github.io/zuroar/reference/roar_shift.md)
+  : Shift every value
+
+## Storage and bytes
+
+- [`roar_optimize()`](https://pedrobtz.github.io/zuroar/reference/roar_optimize.md)
+  [`roar_stats()`](https://pedrobtz.github.io/zuroar/reference/roar_optimize.md)
+  [`roar_size()`](https://pedrobtz.github.io/zuroar/reference/roar_optimize.md)
+  : Storage
+- [`roar_serialize()`](https://pedrobtz.github.io/zuroar/reference/roar_serialize.md)
+  [`roar_unserialize()`](https://pedrobtz.github.io/zuroar/reference/roar_serialize.md)
+  [`roar64_unserialize()`](https://pedrobtz.github.io/zuroar/reference/roar_serialize.md)
+  : Serialise a bitmap
+- [`roar_serial_config()`](https://pedrobtz.github.io/zuroar/reference/roar_serial_config.md)
+  : Send bitmaps to mirai workers
+
+## The build
+
 - [`zuroar_info()`](https://pedrobtz.github.io/zuroar/reference/zuroar_info.md)
   : What zuroar was built with
+
+## Conditions
+
+- [`zuroar-conditions`](https://pedrobtz.github.io/zuroar/reference/zuroar-conditions.md)
+  [`zuroar_error`](https://pedrobtz.github.io/zuroar/reference/zuroar-conditions.md)
+  : Conditions signalled by zuroar
