@@ -259,6 +259,10 @@ when a stage establishes it.
   R process), so they skip under `devtools::test()` and run under
   `R CMD check`. With a serial configuration they need mirai's default
   dispatcher: `dispatcher = FALSE` does not apply it.
+- **`tests/testthat.R` runs only when testthat is installed.** The
+  `nosuggests` leg (CRAN's NOSUGGESTS flavour) checks with no Suggests at
+  all; an unguarded `library(testthat)` is an ERROR there and nowhere
+  else.
 - **Keep the suite inside the CRAN time budget.** It runs in seconds.
 
 ## Definition of done
