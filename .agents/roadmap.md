@@ -37,8 +37,8 @@ methods and bindings reach the bitmap through `zro_get()`.
 | 6 | [Portable serialisation](#stage-6--portable-serialisation) | full | [#7](https://github.com/pedrobtz/zuroar/issues/7) | [#24](https://github.com/pedrobtz/zuroar/pull/24) | 2026-11-07 |
 | 7 | [64-bit bitmaps](#stage-7--64-bit-bitmaps) | quick | [#8](https://github.com/pedrobtz/zuroar/issues/8) | [#26](https://github.com/pedrobtz/zuroar/pull/26) | 2026-11-07 |
 | 8 | [README, article and benchmarks](#stage-8--readme-article-and-benchmarks) | quick | [#9](https://github.com/pedrobtz/zuroar/issues/9) | [#27](https://github.com/pedrobtz/zuroar/pull/27) | 2026-11-07 |
-| 9 | [Full CI](#stage-9--full-ci) | full | [#10](https://github.com/pedrobtz/zuroar/issues/10) | [#29](https://github.com/pedrobtz/zuroar/pull/29) | |
-| 10 | [v0.1.0 readiness](#stage-10--v010-readiness) | full | [#11](https://github.com/pedrobtz/zuroar/issues/11) | | |
+| 9 | [Full CI](#stage-9--full-ci) | full | [#10](https://github.com/pedrobtz/zuroar/issues/10) | [#29](https://github.com/pedrobtz/zuroar/pull/29) | 2026-11-07 |
+| 10 | [v0.1.0 readiness](#stage-10--v010-readiness) | full | [#11](https://github.com/pedrobtz/zuroar/issues/11) | | 2026-11-07 |
 | 11 | [Review](#stage-11--review) | full | [#21](https://github.com/pedrobtz/zuroar/issues/21) | | |
 
 ## Stage 0 — Package identity
