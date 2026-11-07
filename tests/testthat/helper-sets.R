@@ -75,3 +75,52 @@ fixture_bytes <- function(name, writer) {
   path <- test_path("fixtures", paste0(name, ".", writer, ".bin"))
   readBin(path, "raw", file.size(path))
 }
+
+# 64-bit sets as doubles below 2^53, so base R can be the oracle; values
+# straddle 2^32 and the 48-bit container keys.
+gen_values64 <- function() {
+  b32 <- 2^32
+  list(
+    empty = numeric(),
+    low = c(0, 5, 65536, 4294967295),
+    straddle = c(b32 - 2, b32 - 1, b32, b32 + 1, b32 + 65536),
+    sparse = c(floor(runif(300, 0, 2^53 - 1)), 2^53 - 1),
+    dense = b32 * 7 + sample(65536, 20000) - 1,
+    runs = c(b32 * 3 + 0:60000, 2^48 + 0:100, 2^53 - 101:1),
+    mixed = c(sample(2^40, 500), b32 * 9 + 0:5000, 17)
+  )
+}
+
+text64 <- function(v) sprintf("%.0f", sort(unique(v)))
+
+# The 64-bit fixture sets, built through zuroar's own API from sets64.txt:
+# single values and range ends as text, stepped pieces (all below 2^53)
+# as doubles.
+fixture_sets64 <- function() {
+  lines <- readLines(test_path("fixtures", "sets64.txt"))
+  lines <- lines[nzchar(lines) & !startsWith(lines, "#")]
+  out <- list()
+  for (line in lines) {
+    f <- strsplit(line, "\t", fixed = TRUE)[[1]]
+    pieces <- if (length(f) < 3 || !nzchar(f[3])) {
+      character()
+    } else {
+      strsplit(f[3], ",", fixed = TRUE)[[1]]
+    }
+    x <- roar64()
+    for (p in pieces) {
+      if (grepl("/", p, fixed = TRUE)) {
+        step <- as.numeric(sub(".*/", "", p))
+        ab <- as.numeric(strsplit(sub("/.*", "", p), "-", fixed = TRUE)[[1]])
+        x <- roar_add(x, seq(ab[1], ab[2], by = step))
+      } else if (grepl("-", p, fixed = TRUE)) {
+        ab <- strsplit(p, "-", fixed = TRUE)[[1]]
+        x <- roar_add(x, from = ab[1], to = ab[2])
+      } else {
+        x <- roar_add(x, p)
+      }
+    }
+    out[[f[1]]] <- list(bitmap = x, optimize = f[2] == "1")
+  }
+  out
+}

@@ -171,7 +171,7 @@ ALTREP methods read through CRoaring and never expand the set:
 
 - `Length`, `Elt` and `Get_region` answer from the bitmap (`Elt` by
   `roaring_bitmap_select()`, regions by an iterator), so `x[[k]]`,
-  `sum()`, `print()` and `match()` work without a data pointer.
+  `sum()` and `print()` work without a data pointer (`match()` goes through `mtfrm()`, §6.6).
 - `Dataptr` and `Dataptr_or_null` refuse: the first signals
   `zuroar_error_unsupported`, the second returns `NULL`. Any base or
   third-party C that insists on a pointer (`REAL(x)`) gets an error,
@@ -336,6 +336,22 @@ every bitmap. `roaring64_bitmap_get_cardinality()` returns a `uint64_t`,
 so a bitmap holding all 2^64 values reports 0; the bindings read a zero
 cardinality on a non-empty bitmap as 2^64.
 
+*Amended 2026-11-06 (Stage 7):* such a bitmap cannot exist in memory.
+`roaring64` keeps one container per 2^16 values, so 2^64 values need 2^48
+containers, and even 2^53 values need 2^37; building either kills the
+process for memory rather than signalling. The wrap handling stays as a
+defence, but neither a count above 2^53 nor the full range can be built
+or tested. A range operation that would add more than 2^40 values
+(`roar64_range()`, `roar_add(from, to)`, `roar_flip()`) is a
+`zuroar_error_memory` up front; removing or counting over a range
+allocates nothing and takes any range. Further Stage 7 settlements:
+`roar64_range(from, to)` builds a range, as `roar_range()` does for 32
+bits; mixing the classes in one operation is a
+`zuroar_error_unsupported` naming `roar64()`; a `zuroar64`'s `min()`,
+`max()`, `range()`, `x[[k]]`, `roar_select()`, `roar_next()` and
+`roar_prev()` return text, and `roar_values()` defaults to
+`type = "character"`; `as.character()` is defined for both classes.
+
 ### 6.2 Ranges, rank and select
 
 R conventions at the boundary (D6). Ranges are inclusive at both ends,
@@ -468,9 +484,13 @@ kept compressed (D11). Positions count from 1 and are doubles, since a
   is an error, as is `rev(x)`: a set has no reversed form, and
   `rev(as.double(x))` is one call away.
 - **`v %in% x` and `match(v, x)`** work for a `zuroar` because it is a
-  vector (D17): R hashes every value through `Elt`, so they are correct
-  and cost one pass over the set, about 0.7 s per million values (§14).
-  No `mtfrm()` method is needed. The documentation points to
+  vector (D17). *Corrected 2026-11-07 (Stage 7):* R does not read the
+  bitmap through `Elt` here. `match()` passes a classed table through
+  `mtfrm()`, whose default is `as.character()`; that only matched by
+  accident, both sides printing alike, and broke once `as.character()`
+  gave exact text (`"200000"` against `"2e+05"`). `mtfrm.zuroar()`
+  returns `as.double(x)`, which is exact for every 32-bit value, so they
+  expand `x` once into doubles, 8 bytes a value. The documentation points to
   `roar_contains()` and `roar_rank()`, which do not visit the set. For a
   `zuroar64`, an external pointer, they are R's own error: base R's
   `match()` rejects a non-vector before it consults `mtfrm()` (found
@@ -619,7 +639,9 @@ wrapper unit, so the file that includes `roaring.c` holds nothing else.
   with the same calls on `s`.
 - **Counts.** A `zuroar64` holding more than 2^53 values errors in
   `length()` and gives the right text from `roar64_length()`, including
-  the full 2^64 range.
+  the full 2^64 range. *Amended 2026-11-06:* neither can be built in
+  memory (§6.1); the tests cover `roar64_length()` up to 2^40 values and
+  the refusal of larger ranges.
 - **`mirai`.** With `roar_serial_config()` set, a bitmap round-trips
   through a local daemon (skipped when `mirai` is not installed).
 - **Interoperability.** Fixtures written by `pyroaring` and Java's
@@ -835,7 +857,7 @@ refuses, `Elt`/`Get_region` through CRoaring, and ALTREP serialisation.
 
 | | A. External pointer | B. List wrapper | C. ALTREP vector |
 | --- | --- | --- | --- |
-| `%in%`, `match()` | R's own error | works via `mtfrm()`, expands `x` | works; R hashes every element: 0.7 s per 10^6 values, over 5 min for 10^9 |
+| `%in%`, `match()` | R's own error | works via `mtfrm()`, expands `x` | works; R converts `x` through `mtfrm()` and hashes it: 0.7 s per 10^6 values, over 5 min for 10^9 (the conversion was found 2026-11-07; §6.6) |
 | `saveRDS()`, `serialize()`, `mirai`, `parallel` | null pointer; needs `roar_serialize()` and `roar_serial_config()` | same | round-trips natively; bytes written on demand (151 for 10^6 values) |
 | Silent expansion by C code | impossible | impossible | a choice: a refusing `Dataptr` makes `x + 1`, `x > 5`, `as.double(x)`, `x[1] <- 5` and `format(x)` errors; `sum()`, `print()`, `x[[k]]`, `head()` work region-wise |
 | `rev()`, `sort()`, `unique()` | S3 methods | S3 methods | base expands them unless the S3 methods stay; with the class attribute they do |

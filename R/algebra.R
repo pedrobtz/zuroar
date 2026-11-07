@@ -43,19 +43,30 @@ Ops.zuroar <- function(e1, e2) {
       if (.Generic == "!") " Use roar_flip() over a range." else ""
     ))
   }
-  b1 <- inherits(e1, "zuroar")
-  b2 <- inherits(e2, "zuroar")
+  b1 <- inherits(e1, c("zuroar", "zuroar64"))
+  b2 <- inherits(e2, c("zuroar", "zuroar64"))
   if (b1 && b2) {
+    check_same(e1, e2)
+    binop <- function(a, b, op) {
+      if (is64(a)) .Call(zro64_binop, a, b, op) else .Call(zro_binop, a, b, op)
+    }
+    compare <- function(a, b, op) {
+      if (is64(a)) {
+        .Call(zro64_compare, a, b, op)
+      } else {
+        .Call(zro_compare, a, b, op)
+      }
+    }
     return(switch(
       .Generic,
-      "|" = .Call(zro_binop, e1, e2, 1L),
-      "&" = .Call(zro_binop, e1, e2, 2L),
-      "==" = .Call(zro_compare, e1, e2, 1L),
-      "!=" = !.Call(zro_compare, e1, e2, 1L),
-      "<=" = .Call(zro_compare, e1, e2, 2L),
-      ">=" = .Call(zro_compare, e2, e1, 2L),
-      "<" = .Call(zro_compare, e1, e2, 3L),
-      ">" = .Call(zro_compare, e2, e1, 3L),
+      "|" = binop(e1, e2, 1L),
+      "&" = binop(e1, e2, 2L),
+      "==" = compare(e1, e2, 1L),
+      "!=" = !compare(e1, e2, 1L),
+      "<=" = compare(e1, e2, 2L),
+      ">=" = compare(e2, e1, 2L),
+      "<" = compare(e1, e2, 3L),
+      ">" = compare(e2, e1, 3L),
       "-" = unsupported_op(
         "`-` between bitmaps is not defined. Use roar_andnot(x, y) for the difference."
       ),
@@ -100,11 +111,23 @@ unsupported_op <- function(message) {
 #' c(roar(c(1, 5)), roar(9), 2)
 c.zuroar <- function(...) {
   args <- list(...)
+  wide <- is64(args[[1]])
   bitmaps <- lapply(args, function(a) {
-    if (inherits(a, "zuroar")) a else roar(check_values(a), optimize = FALSE)
+    if (inherits(a, c("zuroar", "zuroar64"))) {
+      check_same(args[[1]], a)
+      a
+    } else if (wide) {
+      roar64(check_values(a, wide = TRUE), optimize = FALSE)
+    } else {
+      roar(check_values(a), optimize = FALSE)
+    }
   })
-  .Call(zro_many, bitmaps, 1L)
+  (if (wide) .Call(zro64_many, bitmaps, 1L) else .Call(zro_many, bitmaps, 1L))
 }
+
+#' @rdname c.zuroar
+#' @export
+c.zuroar64 <- c.zuroar
 
 #' Shift every value
 #'
@@ -143,6 +166,15 @@ check_offset <- function(by, arg) {
 
 shift <- function(x, by, arg, drop = FALSE) {
   by <- check_offset(by, arg)
+  if (is64(x)) {
+    if (abs(by) >= 2^53) {
+      zro_abort(
+        "zuroar_error_value",
+        "A zuroar64 shift must be below 2^53 in size."
+      )
+    }
+    return(.Call(zro64_shift, x, by, drop))
+  }
   len <- .Call(zro_cardinality, x)
   if (by == 0 || len == 0) {
     return(.Call(zro_shift, x, 0))
@@ -198,7 +230,12 @@ shift_error <- function(by) {
 #' roar_intersect(x, y)
 #' roar_flip(x, 0, 5)
 roar_union <- function(...) {
-  .Call(zro_many, check_bitmaps(list(...)), 1L)
+  xs <- check_bitmaps(list(...))
+  (if (length(xs) && is64(xs[[1]])) {
+    .Call(zro64_many, xs, 1L)
+  } else {
+    .Call(zro_many, xs, 1L)
+  })
 }
 
 #' @rdname roar_union
@@ -211,31 +248,31 @@ roar_intersect <- function(...) {
       "roar_intersect() needs at least one bitmap: an empty intersection has no universe."
     )
   }
-  .Call(zro_many, xs, 2L)
+  (if (is64(xs[[1]])) .Call(zro64_many, xs, 2L) else .Call(zro_many, xs, 2L))
 }
 
 #' @rdname roar_union
 #' @export
 roar_xor <- function(x, y) {
-  check_bitmap(x)
-  check_bitmap(y, "y")
-  .Call(zro_binop, x, y, 3L)
+  check_pair(x, y)
+  (if (is64(x)) .Call(zro64_binop, x, y, 3L) else .Call(zro_binop, x, y, 3L))
 }
 
 #' @rdname roar_union
 #' @export
 roar_andnot <- function(x, y) {
-  check_bitmap(x)
-  check_bitmap(y, "y")
-  .Call(zro_binop, x, y, 4L)
+  check_pair(x, y)
+  (if (is64(x)) .Call(zro64_binop, x, y, 4L) else .Call(zro_binop, x, y, 4L))
 }
 
 #' @rdname roar_union
 #' @export
 roar_flip <- function(x, from, to) {
   check_bitmap(x)
-  ends <- check_range(from, to)
-  .Call(zro_flip, x, ends)
+  if (is64(x)) {
+    return(.Call(zro64_flip, x, check_range64(from, to)))
+  }
+  .Call(zro_flip, x, check_range(from, to))
 }
 
 #' Compare sets without building them
@@ -261,8 +298,7 @@ roar_flip <- function(x, from, to) {
 #' roar_intersects(x, y)
 #' roar_disjoint(x, roar(100))
 roar_cardinality <- function(x, y, op = c("and", "or", "xor", "andnot")) {
-  check_bitmap(x)
-  check_bitmap(y, "y")
+  check_pair(x, y)
   ops <- c(or = 1L, and = 2L, xor = 3L, andnot = 4L)
   if (missing(op)) {
     op <- "and"
@@ -273,23 +309,29 @@ roar_cardinality <- function(x, y, op = c("and", "or", "xor", "andnot")) {
       '`op` must be one of "and", "or", "xor" or "andnot".'
     )
   }
-  .Call(zro_binop_cardinality, x, y, ops[[op]])
+  (if (is64(x)) {
+    .Call(zro64_binop_cardinality, x, y, ops[[op]])
+  } else {
+    .Call(zro_binop_cardinality, x, y, ops[[op]])
+  })
 }
 
 #' @rdname roar_cardinality
 #' @export
 roar_jaccard <- function(x, y) {
-  check_bitmap(x)
-  check_bitmap(y, "y")
-  .Call(zro_jaccard, x, y)
+  check_pair(x, y)
+  (if (is64(x)) .Call(zro64_jaccard, x, y) else .Call(zro_jaccard, x, y))
 }
 
 #' @rdname roar_cardinality
 #' @export
 roar_intersects <- function(x, y) {
-  check_bitmap(x)
-  check_bitmap(y, "y")
-  .Call(zro_compare, x, y, 4L)
+  check_pair(x, y)
+  (if (is64(x)) {
+    .Call(zro64_compare, x, y, 4L)
+  } else {
+    .Call(zro_compare, x, y, 4L)
+  })
 }
 
 #' @rdname roar_cardinality
@@ -297,3 +339,7 @@ roar_intersects <- function(x, y) {
 roar_disjoint <- function(x, y) {
   !roar_intersects(x, y)
 }
+
+#' @rdname zuroar-ops
+#' @export
+Ops.zuroar64 <- Ops.zuroar

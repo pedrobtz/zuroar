@@ -31,6 +31,10 @@ jobs:
       # treats 0 as false.
       test-timeout-minutes: ${{ (github.event_name != 'schedule' && github.event_name != 'workflow_dispatch') && 10 || 0 }}
       timeout-minutes: 240
+      # Pull requests: step 500 (the default) ran past the 10-minute budget
+      # once the 64-bit tests landed (Stage 7, 2026-11-07); cost scales as
+      # about 1/step. The scheduled full run keeps step 20.
+      quick-step: 2000
 
   # A scheduled failure otherwise notifies only whoever last edited the cron
   # line. This keeps one open issue, labelled gctorture, while the scheduled

@@ -3,11 +3,14 @@
 \name{roar_serialize}
 \alias{roar_serialize}
 \alias{roar_unserialize}
+\alias{roar64_unserialize}
 \title{Serialise a bitmap}
 \usage{
 roar_serialize(x, optimize = FALSE)
 
 roar_unserialize(bytes, trailing = c("error", "ignore"))
+
+roar64_unserialize(bytes, trailing = c("error", "ignore"))
 }
 \arguments{
 \item{x}{A bitmap.}
@@ -15,18 +18,23 @@ roar_unserialize(bytes, trailing = c("error", "ignore"))
 \item{optimize}{If \code{TRUE}, write run-length containers wherever they
 are smaller, from an optimised copy; \code{x} itself is not changed.}
 
-\item{bytes}{A raw vector holding a portable 32-bit bitmap.}
+\item{bytes}{A raw vector holding a portable bitmap: 32-bit for
+\code{roar_unserialize()}, 64-bit for \code{roar64_unserialize()}.}
 
 \item{trailing}{What to do with bytes after the end of the bitmap:
 \code{"error"}, the default, or \code{"ignore"}.}
 }
 \value{
-\code{roar_serialize()} a raw vector, \code{roar_unserialize()} a bitmap.
+\code{roar_serialize()} a raw vector, \code{roar_unserialize()} a
+\code{zuroar} and \code{roar64_unserialize()} a \code{zuroar64}.
 }
 \description{
 \code{roar_serialize()} writes \code{x} in the portable Roaring format, the one
 that the C, C++, Java, Go, Rust and Python implementations share, as a
-raw vector. \code{roar_unserialize()} reads such bytes back into a bitmap.
+raw vector. \code{roar_unserialize()} reads such bytes back into a 32-bit
+bitmap and \code{roar64_unserialize()} into a \code{zuroar64}. The two formats
+share no marker that tells them apart, so the caller chooses the reader;
+it is never guessed from the bytes.
 }
 \details{
 A bitmap also survives \code{\link[=saveRDS]{saveRDS()}}, \code{\link[=serialize]{serialize()}} and a trip to another

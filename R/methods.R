@@ -5,14 +5,20 @@
 #' `.Machine$integer.max`, as for a long vector; `x[[k]]` is the `k`-th
 #' smallest value; `x[i]` is a bitmap of the values at positions `i`;
 #' `head()` and `tail()` return bitmaps; `v %in% x` and `match(v, x)` work
-#' by visiting every value, so [roar_contains()] is the fast membership
-#' test. `sum()` adds the values in one pass. `min()`, `max()` and
+#' by expanding `x` into a double vector first, so [roar_contains()] is
+#' the fast membership test. `sum()` adds the values in one pass. `min()`, `max()` and
 #' `range()` read the ends without expanding the bitmap; an empty bitmap
 #' has none, so they are errors there. `as.double()` returns every value
 #' exactly. `as.integer()` does too, and is an error when a value is above
 #' `.Machine$integer.max`, rather than giving `NA`. A bitmap can be a
 #' data-frame column, and survives [saveRDS()], [serialize()] and a trip to
-#' another R process on its own.
+#' another R process on its own. `as.character()` gives decimal text.
+#'
+#' A `zuroar64` has the same methods (see [roar64()]): `min()`, `max()` and
+#' `range()` return decimal text, `as.double()` is an error when a value is
+#' at or above 2^53, and `length()` is an error above 2^53. It is an external
+#' pointer, not a vector, so it does not survive [saveRDS()], and `%in%`,
+#' `match()`, `sum()` and data-frame columns are not available for it.
 #'
 #' The values are read from the compressed form on demand and never
 #' expanded behind your back: an operation that needs them as a plain
@@ -29,7 +35,8 @@
 #' @param na.rm Ignored: a bitmap holds no `NA`.
 #' @param row.names,optional,nm As for [as.data.frame.vector()].
 #' @param n For `format()` and `print()`, how many values to show.
-#' @return `[` returns a bitmap. `min()` and `max()` return a single double,
+#' @return `[` returns a bitmap. `min()` and `max()` return a single double (text for a
+#'   `zuroar64`),
 #'   `range()` two, `sum()` one, `as.double()` and `as.integer()` a vector,
 #'   `format()` a string, `print()` `x`, invisibly, and `as.data.frame()`
 #'   a data frame with one column.
@@ -62,6 +69,16 @@ as.data.frame.zuroar <- function(
     ...,
     nm = nm
   )
+}
+
+# Base match() and %in% pass a classed table through mtfrm(), whose
+# default is as.character(). With an exact as.character() method that
+# would compare "200000" with as.character(200000), "2e+05", and miss.
+# Doubles are exact for every 32-bit value and compare as numbers.
+#' @rdname zuroar-vector
+#' @export
+mtfrm.zuroar <- function(x) {
+  as.double(x)
 }
 
 #' @rdname zuroar-vector
@@ -111,6 +128,12 @@ as.double.zuroar <- function(x, ...) {
 #' @rdname zuroar-vector
 #' @export
 as.numeric.zuroar <- as.double.zuroar
+
+#' @rdname zuroar-vector
+#' @export
+as.character.zuroar <- function(x, ...) {
+  sprintf("%.0f", .Call(zro_to_double, x))
+}
 
 #' @rdname zuroar-vector
 #' @export

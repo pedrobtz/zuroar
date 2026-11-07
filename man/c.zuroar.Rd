@@ -2,9 +2,12 @@
 % Please edit documentation in R/algebra.R
 \name{c.zuroar}
 \alias{c.zuroar}
+\alias{c.zuroar64}
 \title{Combine bitmaps}
 \usage{
 \method{c}{zuroar}(...)
+
+\method{c}{zuroar64}(...)
 }
 \arguments{
 \item{...}{Bitmaps and vectors of whole numbers from 0 to 2^32 - 1.}

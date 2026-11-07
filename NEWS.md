@@ -42,3 +42,9 @@
   anything corrupt, including a corrupt `.rds` file. `roar_serial_config()`
   configures `mirai` daemons for the 64-bit class to come; 32-bit bitmaps
   need no configuration.
+* `roar64()` and `roar64_range()` build a `zuroar64`, a bitmap of values
+  up to 2^64 - 1 that crosses into R as decimal text or doubles below
+  2^53. It has the 32-bit API; `roar64_length()` gives its exact size and
+  `roar64_unserialize()` reads its portable bytes. Every change to a
+  `zuroar64` copies it, since CRoaring's 64-bit bitmaps have no
+  copy-on-write.

@@ -3,9 +3,12 @@
 \name{zuroar-ops}
 \alias{zuroar-ops}
 \alias{Ops.zuroar}
+\alias{Ops.zuroar64}
 \title{Operators on bitmaps}
 \usage{
 \method{Ops}{zuroar}(e1, e2)
+
+\method{Ops}{zuroar64}(e1, e2)
 }
 \arguments{
 \item{e1, e2}{Bitmaps, or a bitmap and a single whole number.}

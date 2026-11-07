@@ -75,6 +75,19 @@ test_that("%in% and match() agree with the oracle", {
   }
 })
 
+test_that("%in% and match() compare numbers, not their printed form", {
+  # mtfrm() defaults to as.character(), which would give "200000" for the
+  # bitmap and "2e+05" for the number.
+  x <- roar(c(65530, 200000, 1e6, 4294967295))
+  expect_true(200000 %in% x)
+  expect_identical(match(c(1e6, 200000, 7), x), c(3L, 2L, NA))
+  expect_identical(match(x, c(4294967295, 200000)), c(NA, 2L, NA, 1L))
+  expect_identical(
+    as.character(x),
+    c("65530", "200000", "1000000", "4294967295")
+  )
+})
+
 test_that("[ returns a bitmap for positive, negative and logical positions", {
   withr::local_seed(3)
   for (v in gen_values()) {

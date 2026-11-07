@@ -20,4 +20,11 @@
 roaring_bitmap_t *zro_portable_read(const char *buf, size_t len, size_t *used,
                                     const char **reason);
 
+/* The same for one 64-bit bitmap in roaring64's portable format, through
+ * roaring64_bitmap_portable_deserialize_size(), _safe() and
+ * roaring64_bitmap_internal_validate() (D15: the caller chooses the
+ * width; it is never guessed from the bytes). */
+roaring64_bitmap_t *zro_portable_read64(const char *buf, size_t len,
+                                        size_t *used, const char **reason);
+
 #endif /* ZRO_PORTABLE_H */
