@@ -2,7 +2,6 @@
 % Please edit documentation in R/methods.R
 \name{zuroar-vector}
 \alias{zuroar-vector}
-\alias{[.zuroar}
 \alias{as.data.frame.zuroar}
 \alias{Summary.zuroar}
 \alias{as.double.zuroar}
@@ -12,8 +11,6 @@
 \alias{print.zuroar}
 \title{A bitmap as a sorted vector}
 \usage{
-\method{[}{zuroar}(x, i, ...)
-
 \method{as.data.frame}{zuroar}(
   x,
   row.names = NULL,
@@ -37,14 +34,10 @@
 \arguments{
 \item{x}{A bitmap.}
 
-\item{i}{Positions, from 1, as in \code{[} on a vector: positive to select,
-negative to exclude, or a logical mask. \code{NA} and a position past the
-end are \code{zuroar_error_index} errors.}
+\item{row.names, optional, nm}{As for \code{\link[=as.data.frame.vector]{as.data.frame.vector()}}.}
 
 \item{...}{For \code{Summary}, further arguments, which must be absent. For
 the others, ignored or passed on.}
-
-\item{row.names, optional, nm}{As for \code{\link[=as.data.frame.vector]{as.data.frame.vector()}}.}
 
 \item{na.rm}{Ignored: a bitmap holds no \code{NA}.}
 

@@ -36,4 +36,18 @@ SEXP zro_many(SEXP a0, SEXP a1);
 SEXP zro_flip(SEXP a0, SEXP a1);
 SEXP zro_shift(SEXP a0, SEXP a1);
 
+/* zro_order.c */
+SEXP zro_rank(SEXP a0, SEXP a1);
+SEXP zro_select(SEXP a0, SEXP a1);
+SEXP zro_next(SEXP a0, SEXP a1);
+SEXP zro_prev(SEXP a0, SEXP a1);
+SEXP zro_range_count(SEXP a0, SEXP a1);
+SEXP zro_contains_range(SEXP a0, SEXP a1);
+SEXP zro_change_range(SEXP a0, SEXP a1, SEXP a2);
+SEXP zro_values(SEXP a0, SEXP a1, SEXP a2, SEXP a3);
+SEXP zro_subset(SEXP a0, SEXP a1, SEXP a2, SEXP a3);
+SEXP zro_optimize(SEXP a0);
+SEXP zro_size(SEXP a0);
+SEXP zro_stats(SEXP a0);
+
 #endif /* ZRO_INIT_H */

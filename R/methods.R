@@ -24,9 +24,6 @@
 #' To loop over the values, use `for (v in x)` or `lapply(x, f)`.
 #'
 #' @param x A bitmap.
-#' @param i Positions, from 1, as in `[` on a vector: positive to select,
-#'   negative to exclude, or a logical mask. `NA` and a position past the
-#'   end are `zuroar_error_index` errors.
 #' @param ... For `Summary`, further arguments, which must be absent. For
 #'   the others, ignored or passed on.
 #' @param na.rm Ignored: a bitmap holds no `NA`.
@@ -47,17 +44,6 @@
 #' as.integer(x)
 #' x
 NULL
-
-#' @rdname zuroar-vector
-#' @export
-`[.zuroar` <- function(x, i, ...) {
-  # Base `[` builds the result through the class's ALTREP Extract_subset
-  # method, then drops the class attribute as it does for any classed
-  # vector; put it back.
-  out <- NextMethod()
-  class(out) <- "zuroar"
-  out
-}
 
 #' @rdname zuroar-vector
 #' @export

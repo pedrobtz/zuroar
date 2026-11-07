@@ -41,14 +41,17 @@ roar_range <- function(from, to) {
 
 #' Add or remove values
 #'
-#' `roar_add()` returns a copy of `x` with `values` added and
-#' `roar_remove()` one with `values` removed. Neither changes `x`: like
+#' `roar_add()` returns a copy of `x` with values added and `roar_remove()`
+#' one with values removed: either the `values` given, or every whole
+#' number from `from` to `to`, both included. Neither changes `x`: like
 #' every zuroar function, they return a new bitmap. The copy shares
 #' CRoaring's containers with `x` until it changes them, so adding one
 #' value to a large bitmap does not copy it.
 #'
 #' @param x A bitmap.
 #' @inheritParams roar
+#' @param from,to Instead of `values`, the first and last values of a
+#'   range, both included.
 #' @return A bitmap.
 #' @export
 #' @examples
@@ -56,16 +59,37 @@ roar_range <- function(from, to) {
 #' roar_add(x, 7)
 #' roar_remove(x, 5)
 #' x
-roar_add <- function(x, values) {
+#'
+#' y <- roar_range(1, 100)
+#' roar_remove(y, from = 10, to = 89)
+roar_add <- function(x, values, from, to) {
   check_bitmap(x)
-  .Call(zro_add, x, check_values(values))
+  change(x, values, from, to, add = TRUE, missing(values))
 }
 
 #' @rdname roar_add
 #' @export
-roar_remove <- function(x, values) {
+roar_remove <- function(x, values, from, to) {
   check_bitmap(x)
-  .Call(zro_remove, x, check_values(values))
+  change(x, values, from, to, add = FALSE, missing(values))
+}
+
+change <- function(x, values, from, to, add, no_values) {
+  has_range <- !missing(from) || !missing(to)
+  if (no_values == !has_range) {
+    zro_abort(
+      "zuroar_error",
+      "Give either `values`, or both `from` and `to`."
+    )
+  }
+  if (has_range) {
+    if (missing(from) || missing(to)) {
+      zro_abort("zuroar_error", "Give both `from` and `to`.")
+    }
+    return(.Call(zro_change_range, x, check_range(from, to), add))
+  }
+  values <- check_values(values)
+  if (add) .Call(zro_add, x, values) else .Call(zro_remove, x, values)
 }
 
 #' Test membership

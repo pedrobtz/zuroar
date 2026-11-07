@@ -124,6 +124,12 @@ Grows as stages land; see `.agents/design.md` §4.
   operations, cardinality-only counts and shifting. Out-of-domain shifts
   are decided in R from `min()` and `max()` before CRoaring's
   `add_offset()`, which drops silently.
+- `src/zro_order.c`, `R/order.R`, `R/index.R`: rank, select, next and
+  previous, ranges, bounded extraction, storage, and positional access.
+  `[.zuroar` turns the index into sorted runs of positions in R, and
+  `zro_subset()` reads runs longer than 64 positions as a range
+  intersection, shorter ones through an iterator. The ALTREP
+  `Extract_subset` serves only C callers that bypass dispatch.
 - `src/zro_info.c`, `R/info.R`: `zuroar_info()`.
 - `src/zro_selftest.c`: an unexported oracle hook, `.Call(zro_selftest, x,
   y, optimize)`, so the build variants test CRoaring before the bindings
@@ -155,10 +161,11 @@ when a stage establishes it.
   Its `Serialized_state` writes portable bytes and `Unserialize` reads
   them through the bounded path, so `saveRDS()` works. Consequences to
   keep in mind: `identical(x, y)` is that error (use `==`), and so is
-  `expect_identical()` on two bitmaps; base `[` drops the class of what
-  `Extract_subset` returns, so `[.zuroar` puts it back; `sum()` goes
-  through the `Sum` method, every other Summary member through
-  `Summary.zuroar`.
+  `expect_identical()` on two bitmaps; `Summary.zuroar` calls the exact
+  C sum itself, because R 4.6 was seen to skip the ALTREP `Sum` method
+  and add in `long double`, a plain double on arm64 macOS; and tests
+  call `.Call()` only through package functions (`R/hooks.R`), because
+  rcnst compares uncompiled `.Call()` arguments with `identical()`.
 - **An attached bitmap is never modified.** `zro_attach()` is the last
   write; every binding builds a new bitmap (D4). The read cursor in
   `zro_bitmap_t` holds a CRoaring iterator into the containers, and

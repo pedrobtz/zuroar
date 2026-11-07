@@ -28,3 +28,11 @@
   `roar_flip()` flips a range.
 * `x + k`, `x - k` and `roar_shift()` shift every value; leaving the
   domain is an error unless `roar_shift(drop = TRUE)`.
+* Ordered queries: `roar_rank()`, `roar_select()` (from 1), `roar_next()`,
+  `roar_prev()`, `roar_count()` and `roar_contains_range()`, with
+  inclusive ranges; `roar_values()` extracts a bounded number of values.
+  `roar_add()` and `roar_remove()` take `from` and `to` for a range.
+* `sort()` and `unique()` return the bitmap; `[<-`, `[[<-`, `rev()` and
+  `sort(decreasing = TRUE)` are errors.
+* `roar_optimize()`, `roar_stats()` and `roar_size()` show and tune how a
+  bitmap is stored.

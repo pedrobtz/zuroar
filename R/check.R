@@ -93,3 +93,31 @@ check_range <- function(from, to) {
   }
   c(from, to)
 }
+
+index_error <- function(message) {
+  zro_abort("zuroar_error_index", message)
+}
+
+# Positions counting from 1, for roar_select() and `[[`: whole numbers in
+# 1..len, returned as doubles.
+check_positions <- function(k, len) {
+  if (is.factor(k) || !(is.numeric(k))) {
+    index_error("Positions must be whole numbers.")
+  }
+  k <- as.double(k)
+  if (anyNA(k)) {
+    index_error("Positions must not be NA.")
+  }
+  if (any(k != trunc(k))) {
+    index_error("Positions must be whole numbers.")
+  }
+  bad <- k < 1 | k > len
+  if (any(bad)) {
+    index_error(sprintf(
+      "Position %s is outside 1 to %s.",
+      format(k[which(bad)[1]], scientific = FALSE),
+      format(len, scientific = FALSE)
+    ))
+  }
+  k
+}

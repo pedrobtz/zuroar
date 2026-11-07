@@ -33,7 +33,7 @@ methods and bindings reach the bitmap through `zro_get()`.
 | 2 | [The zuroar class](#stage-2--the-zuroar-class) | full | [#4](https://github.com/pedrobtz/zuroar/issues/4) | [#17](https://github.com/pedrobtz/zuroar/pull/17) | 2026-11-06 |
 | 3 | [Set algebra](#stage-3--set-algebra) | quick | [#5](https://github.com/pedrobtz/zuroar/issues/5) | [#18](https://github.com/pedrobtz/zuroar/pull/18) | 2026-11-06 |
 | 4 | [ALTREP representation](#stage-4--altrep-representation) | full | [#20](https://github.com/pedrobtz/zuroar/issues/20) | [#23](https://github.com/pedrobtz/zuroar/pull/23) | 2026-11-06 |
-| 5 | [Rank, select and ranges](#stage-5--rank-select-and-ranges) | quick | [#6](https://github.com/pedrobtz/zuroar/issues/6) | | |
+| 5 | [Rank, select and ranges](#stage-5--rank-select-and-ranges) | quick | [#6](https://github.com/pedrobtz/zuroar/issues/6) | [#19](https://github.com/pedrobtz/zuroar/pull/19) | 2026-11-07 |
 | 6 | [Portable serialisation](#stage-6--portable-serialisation) | full | [#7](https://github.com/pedrobtz/zuroar/issues/7) | | |
 | 7 | [64-bit bitmaps](#stage-7--64-bit-bitmaps) | quick | [#8](https://github.com/pedrobtz/zuroar/issues/8) | | |
 | 8 | [README, article and benchmarks](#stage-8--readme-article-and-benchmarks) | quick | [#9](https://github.com/pedrobtz/zuroar/issues/9) | | |
@@ -270,8 +270,8 @@ is an error. Nothing the user saw in Stages 2 and 3 changes except that
 **Design.** §4, §6.4, §6.6, §8 (lifetimes), §14, D4, D11, D17.
 
 *Done 2026-11-06.* Also: `sum()` works through a `Sum` method (design
-§6.6 amended); `[` is a thin S3 method over `Extract_subset`, because
-base `[` drops the class attribute of its result; `as.data.frame()` is
+§6.6 amended); `[` was a thin S3 method over `Extract_subset`, because
+base `[` drops the class attribute of its result (Stage 5 replaces it); `as.data.frame()` is
 `as.data.frame.vector`; `rev()`, `sort(decreasing = TRUE)` and
 `unique()` keep their Stage 5 methods, so until then `rev(x)` is `x` and
 `unique(x)` a plain vector; a data frame with a bitmap column builds and
@@ -294,8 +294,10 @@ with R's conventions, and a bitmap behaves as a sorted vector.
   `roar_values()` (bounded extraction), `roar_optimize()`, `roar_stats()`,
   `roar_size()`.
 - `roar_add(from =, to =)` and `roar_remove(from =, to =)`.
-- Sorted-vector methods (§6.6): `[` (through Stage 4's
-  `Extract_subset`), `[[`, `head()`, `tail()`, `sort()`, `unique()`;
+- Sorted-vector methods (§6.6): `[` (an S3 method over `zro_subset()`;
+  *2026-11-06:* not through `Extract_subset`, which receives indices R
+  has already resolved and so cannot raise the classed errors below),
+  `[[`, `head()`, `tail()`, `sort()`, `unique()`;
   `[<-`, `[[<-`, `rev()` and `sort(decreasing = TRUE)` error;
   `zuroar_error_index` and `zuroar_error_unsupported`. No `mtfrm()`:
   D17 makes `%in%` and `match()` work without it.

@@ -9,5 +9,5 @@
       roar(c(2, 4))[3]
     Condition
       Error:
-      ! Position 3 is outside 1 to 2, the positions of this bitmap.
+      ! Position 3 is past the end of a bitmap of length 2.
 

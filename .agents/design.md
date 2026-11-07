@@ -255,7 +255,12 @@ cfg <- roar_serial_config()              # for mirai::daemons(serial = cfg)
 ```
 
 `print()` and `format()` show the class, cardinality, range and first
-values. `[<-`, `rev()` and `!` are errors (§6.3, §6.6).
+values. *Settled 2026-11-06 (Stage 5):* `roar_values(x, from, n)` has no
+default for `n`, since bounded extraction is its point; `n = Inf` asks
+for every value. `roar_size(x)` is the size of the portable serialised
+form in bytes, exact and comparable across implementations;
+`roar_stats(x)` gives the in-memory bytes per container kind. `[<-`,
+`rev()` and `!` are errors (§6.3, §6.6).
 
 ### 5.1 Against pyroaring
 
@@ -470,6 +475,12 @@ kept compressed (D11). Positions count from 1 and are doubles, since a
   `zuroar64`, an external pointer, they are R's own error: base R's
   `match()` rejects a non-vector before it consults `mtfrm()` (found
   2026-11-06), so the RFC's `mtfrm()` plan could never have worked there.
+- **Positions** follow R where the design is silent (settled 2026-11-06,
+  Stage 5): fractional positions truncate toward zero, zeros are dropped,
+  and a logical index longer than `x` is a `zuroar_error_index` (R would
+  give `NA`). `x[]` returns `x`. `x[i]` is an S3 method that resolves the
+  index in R and reads runs of positions through CRoaring; the ALTREP
+  `Extract_subset` of §4 serves C code that subsets without dispatch.
 - **`[<-` and `[[<-`** are errors: assigning by position has no meaning
   for a set; `roar_add()` and `roar_remove()` change it.
 - **`identical(x, y)`** is a `zuroar_error_unsupported`, not a value
