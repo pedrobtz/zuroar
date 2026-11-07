@@ -21,8 +21,8 @@
       Error:
       ! The bitmap holds 2147483648, above .Machine$integer.max; use as.double() instead.
     Code
-      sum(roar(1))
+      prod(roar(1))
     Condition
       Error:
-      ! sum() is not defined for a zuroar bitmap.
+      ! prod() is not defined for a zuroar bitmap.
 

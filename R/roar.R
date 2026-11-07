@@ -71,8 +71,8 @@ roar_remove <- function(x, values) {
 #' Test membership
 #'
 #' `roar_contains()` tells, for each of `values`, whether `x` holds it.
-#' It is the fast form of `values %in% x`, which works too but expands
-#' `x` into a vector first.
+#' It is the fast form of `values %in% x`, which works too but visits
+#' every value of `x`.
 #'
 #' @inheritParams roar_add
 #' @param values Whole numbers from 0 to 2^32 - 1.

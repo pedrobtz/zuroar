@@ -15,11 +15,13 @@ class says what went wrong:
 negative or fractional number, or one above 2^32 - 1; or an output
 type that cannot hold a value, such as \code{as.integer()} on a bitmap
 holding a value above \code{.Machine$integer.max}.
-\item \code{zuroar_error_pointer}: a bitmap whose pointer is null. A bitmap is
-an external pointer, so it does not survive \code{\link[=saveRDS]{saveRDS()}} and
-\code{\link[=readRDS]{readRDS()}} or a trip to another process.
+\item \code{zuroar_error_index}: a position outside \code{seq_len(length(x))}, or
+\code{NA}, in \code{x[i]}.
 \item \code{zuroar_error_unsupported}: an operation a set does not define, such
-as \code{sum()} of a bitmap.
+as \code{x > 5}, or one that would need the values as a plain vector, such
+as \code{x[1] <- 5} or \code{identical(x, y)}.
+\item \code{zuroar_error_format}: bytes that are not a valid portable Roaring
+bitmap, for example a corrupt \code{.rds} file.
 \item \code{zuroar_error_memory}: CRoaring could not allocate memory.
 }
 

@@ -1,33 +1,48 @@
 #' A bitmap as a sorted vector
 #'
-#' A bitmap behaves like `sort(unique(v))` kept compressed. `length()` is
-#' the number of values: an integer, or a double above
-#' `.Machine$integer.max`, as for a long vector. `min()`, `max()` and `range()` read the
-#' ends without expanding the bitmap; an empty bitmap has none, so they
-#' are errors there. `as.double()` returns every value exactly.
-#' `as.integer()` does too, and is an error when a value is above
-#' `.Machine$integer.max`, rather than giving `NA`.
+#' A bitmap behaves like `sort(unique(v))` kept compressed. It is a vector
+#' to R: `length()` is the number of values, an integer, or a double above
+#' `.Machine$integer.max`, as for a long vector; `x[[k]]` is the `k`-th
+#' smallest value; `x[i]` is a bitmap of the values at positions `i`;
+#' `head()` and `tail()` return bitmaps; `v %in% x` and `match(v, x)` work
+#' by visiting every value, so [roar_contains()] is the fast membership
+#' test. `sum()` adds the values in one pass. `min()`, `max()` and
+#' `range()` read the ends without expanding the bitmap; an empty bitmap
+#' has none, so they are errors there. `as.double()` returns every value
+#' exactly. `as.integer()` does too, and is an error when a value is above
+#' `.Machine$integer.max`, rather than giving `NA`. A bitmap can be a
+#' data-frame column, and survives [saveRDS()], [serialize()] and a trip to
+#' another R process on its own.
 #'
-#' `format()` and `print()` never fail: a bitmap whose pointer did not
-#' survive [saveRDS()] prints as a null pointer, and every other function
-#' signals `zuroar_error_pointer` on it.
+#' The values are read from the compressed form on demand and never
+#' expanded behind your back: an operation that needs them as a plain
+#' vector, such as `x[1] <- 5`, `identical(x, y)` or `cumsum(x)`, is a
+#' `zuroar_error_unsupported` error. Compare bitmaps as sets with `==`,
+#' and expand one explicitly with `as.double()`.
 #'
-#' To loop over the values, use `for (v in as.double(x))`: R does not let
-#' a class define its own iteration.
+#' `format()` gives one line describing the bitmap, which `print()` shows.
+#' To loop over the values, use `for (v in x)` or `lapply(x, f)`.
 #'
 #' @param x A bitmap.
+#' @param i Positions, from 1, as in `[` on a vector: positive to select,
+#'   negative to exclude, or a logical mask. `NA` and a position past the
+#'   end are `zuroar_error_index` errors.
 #' @param ... For `Summary`, further arguments, which must be absent. For
-#'   the others, ignored.
+#'   the others, ignored or passed on.
 #' @param na.rm Ignored: a bitmap holds no `NA`.
+#' @param row.names,optional,nm As for [as.data.frame.vector()].
 #' @param n For `format()` and `print()`, how many values to show.
-#' @return `length()` returns a single integer or double, `min()` and
-#'   `max()` a single double,
-#'   `range()` two, `as.double()` and `as.integer()` a vector, `format()` a
-#'   string, and `print()` `x`, invisibly.
+#' @return `[` returns a bitmap. `min()` and `max()` return a single double,
+#'   `range()` two, `sum()` one, `as.double()` and `as.integer()` a vector,
+#'   `format()` a string, `print()` `x`, invisibly, and `as.data.frame()`
+#'   a data frame with one column.
 #' @name zuroar-vector
 #' @examples
 #' x <- roar(c(1, 5, 9, 100000))
 #' length(x)
+#' x[[2]]
+#' x[2:3]
+#' c(5, 6) %in% x
 #' range(x)
 #' as.integer(x)
 #' x
@@ -35,15 +50,24 @@ NULL
 
 #' @rdname zuroar-vector
 #' @export
-length.zuroar <- function(x) {
-  .Call(zro_cardinality, x)
+`[.zuroar` <- function(x, i, ...) {
+  # Base `[` builds the result through the class's ALTREP Extract_subset
+  # method, then drops the class attribute as it does for any classed
+  # vector; put it back.
+  out <- NextMethod()
+  class(out) <- "zuroar"
+  out
 }
+
+#' @rdname zuroar-vector
+#' @export
+as.data.frame.zuroar <- as.data.frame.vector
 
 #' @rdname zuroar-vector
 #' @export
 Summary.zuroar <- function(..., na.rm = FALSE) {
   args <- list(...)
-  if (!.Generic %in% c("min", "max", "range")) {
+  if (!.Generic %in% c("min", "max", "range", "sum")) {
     zro_abort(
       "zuroar_error_unsupported",
       sprintf("%s() is not defined for a zuroar bitmap.", .Generic)
@@ -57,6 +81,10 @@ Summary.zuroar <- function(..., na.rm = FALSE) {
         .Generic
       )
     )
+  }
+  if (.Generic == "sum") {
+    # One pass through the ALTREP Get_region method; no expansion.
+    return(NextMethod())
   }
   x <- args[[1]]
   if (.Call(zro_cardinality, x) == 0) {
@@ -93,9 +121,6 @@ as.integer.zuroar <- function(x, ...) {
 #' @export
 format.zuroar <- function(x, n = 10, ...) {
   # Never an error: R and testthat format objects while handling one.
-  if (.Call(zro_is_null, x)) {
-    return("<zuroar> null pointer: restore it with roar_unserialize()")
-  }
   len <- .Call(zro_cardinality, x)
   if (len == 0) {
     return("<zuroar> empty")
@@ -122,10 +147,11 @@ print.zuroar <- function(x, n = 10, ...) {
 }
 
 # pillar, and through it rlang's backtraces, describe each object in a call
-# by type_sum(), whose default calls length(). On a bitmap whose pointer is
-# null that would signal a second error while the first is being handled,
-# so the abbreviation is given directly. Registered lazily: pillar is only
-# in Suggests.
+# by type_sum(), whose default calls length(). A zuroar answers that from
+# its ALTREP Length method, but the 64-bit class, an external pointer, can
+# have a null pointer there, and a second error while the first is being
+# handled would escape the handler; so the abbreviation is given directly.
+# Registered lazily: pillar is only in Suggests.
 #' @exportS3Method pillar::type_sum
 type_sum.zuroar <- function(x) {
   "roar"
