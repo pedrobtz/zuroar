@@ -13,13 +13,13 @@ Source:
 [`DESCRIPTION`](https://github.com/pedrobtz/zuroar/blob/main/DESCRIPTION)
 
 Baltazar P (2026). *zuroar: Compressed Sets of Unsigned Integers with
-'Roaring' Bitmaps*. R package version 0.0.0.9000,
+'Roaring' Bitmaps*. R package version 0.1.0,
 <https://pedrobtz.github.io/zuroar/>.
 
     @Manual{,
       title = {zuroar: Compressed Sets of Unsigned Integers with 'Roaring' Bitmaps},
       author = {Pedro Baltazar},
       year = {2026},
-      note = {R package version 0.0.0.9000},
+      note = {R package version 0.1.0},
       url = {https://pedrobtz.github.io/zuroar/},
     }
