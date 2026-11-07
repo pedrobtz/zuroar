@@ -37,7 +37,7 @@ methods and bindings reach the bitmap through `zro_get()`.
 | 6 | [Portable serialisation](#stage-6--portable-serialisation) | full | [#7](https://github.com/pedrobtz/zuroar/issues/7) | [#24](https://github.com/pedrobtz/zuroar/pull/24) | 2026-11-07 |
 | 7 | [64-bit bitmaps](#stage-7--64-bit-bitmaps) | quick | [#8](https://github.com/pedrobtz/zuroar/issues/8) | [#26](https://github.com/pedrobtz/zuroar/pull/26) | 2026-11-07 |
 | 8 | [README, article and benchmarks](#stage-8--readme-article-and-benchmarks) | quick | [#9](https://github.com/pedrobtz/zuroar/issues/9) | [#27](https://github.com/pedrobtz/zuroar/pull/27) | 2026-11-07 |
-| 9 | [Full CI](#stage-9--full-ci) | full | [#10](https://github.com/pedrobtz/zuroar/issues/10) | | |
+| 9 | [Full CI](#stage-9--full-ci) | full | [#10](https://github.com/pedrobtz/zuroar/issues/10) | [#29](https://github.com/pedrobtz/zuroar/pull/29) | |
 | 10 | [v0.1.0 readiness](#stage-10--v010-readiness) | full | [#11](https://github.com/pedrobtz/zuroar/issues/11) | | |
 | 11 | [Review](#stage-11--review) | full | [#21](https://github.com/pedrobtz/zuroar/issues/21) | | |
 
@@ -466,6 +466,14 @@ the default branch's code is fixed.
 - A full-profile run is green on the pull request and on the merge commit.
 
 **Design.** §11.
+
+*Work list 2026-11-07:* every run on the last feature merge (`4527ac4`)
+was green except gctorture at step 20, dispatched by hand because a push
+to `main` runs the quick step. It reached the job's 240-minute limit in
+`test-wide.R`, whose 64-bit truncation test cut a 2,949-byte fixture at
+every byte (3,187 expectations, about 3 s each under gctorture). That
+test now cuts every byte of the small fixtures, as design §8 says, and a
+bounded set of the large one; the job's limit goes to 330 minutes.
 
 ## Stage 10 — v0.1.0 readiness
 

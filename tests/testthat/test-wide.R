@@ -288,9 +288,23 @@ test_that("the readers are chosen by the caller, never guessed (D15)", {
 })
 
 test_that("64-bit truncation and corruption are zuroar_error_format", {
+  withr::local_seed(29)
   for (name in c("small", "high", "buckets", "runs")) {
     b <- fixture_bytes(name, "java64")
-    for (n in seq_len(length(b) - 1) - 1) {
+    # Every cut of the small fixtures (design §8). For the 2,949-byte
+    # buckets fixture, every cut through its first and last 150 bytes,
+    # where the bucket and container headers are, and 100 in between:
+    # every cut there took 2.6 hours under gctorture at step 20. The fuzz
+    # target covers arbitrary cuts.
+    cuts <- seq_len(length(b) - 1) - 1
+    if (length(b) > 400) {
+      inner <- cuts[cuts >= 150 & cuts < length(b) - 150]
+      cuts <- sort(c(
+        cuts[cuts < 150 | cuts >= length(b) - 150],
+        sample(inner, 100)
+      ))
+    }
+    for (n in cuts) {
       expect_error(
         roar64_unserialize(b[seq_len(n)]),
         class = "zuroar_error_format",
