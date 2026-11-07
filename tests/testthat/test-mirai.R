@@ -13,6 +13,7 @@ test_that("a bitmap travels to a mirai daemon and back with no serial config", {
 
   mirai::daemons(1)
   withr::defer(mirai::daemons(0))
+  use_this_library()
   x <- roar(c(1, 7, 100000))
   m <- mirai::mirai(zuroar::roar_add(x, 8), x = x)
   y <- mirai::call_mirai(m)$data
@@ -34,6 +35,7 @@ test_that("a bitmap travels to a mirai daemon with roar_serial_config() set", {
   # configuration is not applied.
   mirai::daemons(1, serial = roar_serial_config())
   withr::defer(mirai::daemons(0))
+  use_this_library()
   x <- roar(c(1, 5, 9, 4294967295))
   m <- mirai::mirai(zuroar::roar_add(x, 7), x = x)
   y <- mirai::call_mirai(m)$data
