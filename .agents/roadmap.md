@@ -385,7 +385,10 @@ through decimal text.
   `roar64_unserialize()` with 64-bit hostile-input tests, and the 64-bit
   half of `roar_serial_config()`.
 - Counts as doubles that error above 2^53, `roar64_length()` as exact text,
-  and the full 2^64 range read correctly (D14). *Deviation 2026-11-06:*
+  and the full 2^64 range read correctly (D14). *CI 2026-11-07:* gctorture's
+  quick step raised from 500 to 2000, since the 64-bit tests pushed the
+  quick run past its 10-minute budget; the full run keeps step 20.
+  *Deviation 2026-11-06:*
   `roaring64` needs one container per 2^16 values, so neither the full
   range nor a count above 2^53 fits in memory; the code keeps the wrap
   and the error, and ranges adding more than 2^40 values are refused
