@@ -2,7 +2,8 @@
 % Please edit documentation in R/methods.R
 \name{zuroar-vector}
 \alias{zuroar-vector}
-\alias{length.zuroar}
+\alias{[.zuroar}
+\alias{as.data.frame.zuroar}
 \alias{Summary.zuroar}
 \alias{as.double.zuroar}
 \alias{as.numeric.zuroar}
@@ -11,7 +12,15 @@
 \alias{print.zuroar}
 \title{A bitmap as a sorted vector}
 \usage{
-\method{length}{zuroar}(x)
+\method{[}{zuroar}(x, i, ...)
+
+\method{as.data.frame}{zuroar}(
+  x,
+  row.names = NULL,
+  optional = FALSE,
+  ...,
+  nm = deparse1(substitute(x))
+)
 
 \method{Summary}{zuroar}(..., na.rm = FALSE)
 
@@ -28,39 +37,56 @@
 \arguments{
 \item{x}{A bitmap.}
 
+\item{i}{Positions, from 1, as in \code{[} on a vector: positive to select,
+negative to exclude, or a logical mask. \code{NA} and a position past the
+end are \code{zuroar_error_index} errors.}
+
 \item{...}{For \code{Summary}, further arguments, which must be absent. For
-the others, ignored.}
+the others, ignored or passed on.}
+
+\item{row.names, optional, nm}{As for \code{\link[=as.data.frame.vector]{as.data.frame.vector()}}.}
 
 \item{na.rm}{Ignored: a bitmap holds no \code{NA}.}
 
 \item{n}{For \code{format()} and \code{print()}, how many values to show.}
 }
 \value{
-\code{length()} returns a single integer or double, \code{min()} and
-\code{max()} a single double,
-\code{range()} two, \code{as.double()} and \code{as.integer()} a vector, \code{format()} a
-string, and \code{print()} \code{x}, invisibly.
+\code{[} returns a bitmap. \code{min()} and \code{max()} return a single double,
+\code{range()} two, \code{sum()} one, \code{as.double()} and \code{as.integer()} a vector,
+\code{format()} a string, \code{print()} \code{x}, invisibly, and \code{as.data.frame()}
+a data frame with one column.
 }
 \description{
-A bitmap behaves like \code{sort(unique(v))} kept compressed. \code{length()} is
-the number of values: an integer, or a double above
-\code{.Machine$integer.max}, as for a long vector. \code{min()}, \code{max()} and \code{range()} read the
-ends without expanding the bitmap; an empty bitmap has none, so they
-are errors there. \code{as.double()} returns every value exactly.
-\code{as.integer()} does too, and is an error when a value is above
-\code{.Machine$integer.max}, rather than giving \code{NA}.
+A bitmap behaves like \code{sort(unique(v))} kept compressed. It is a vector
+to R: \code{length()} is the number of values, an integer, or a double above
+\code{.Machine$integer.max}, as for a long vector; \code{x[[k]]} is the \code{k}-th
+smallest value; \code{x[i]} is a bitmap of the values at positions \code{i};
+\code{head()} and \code{tail()} return bitmaps; \code{v \%in\% x} and \code{match(v, x)} work
+by visiting every value, so \code{\link[=roar_contains]{roar_contains()}} is the fast membership
+test. \code{sum()} adds the values in one pass. \code{min()}, \code{max()} and
+\code{range()} read the ends without expanding the bitmap; an empty bitmap
+has none, so they are errors there. \code{as.double()} returns every value
+exactly. \code{as.integer()} does too, and is an error when a value is above
+\code{.Machine$integer.max}, rather than giving \code{NA}. A bitmap can be a
+data-frame column, and survives \code{\link[=saveRDS]{saveRDS()}}, \code{\link[=serialize]{serialize()}} and a trip to
+another R process on its own.
 }
 \details{
-\code{format()} and \code{print()} never fail: a bitmap whose pointer did not
-survive \code{\link[=saveRDS]{saveRDS()}} prints as a null pointer, and every other function
-signals \code{zuroar_error_pointer} on it.
+The values are read from the compressed form on demand and never
+expanded behind your back: an operation that needs them as a plain
+vector, such as \code{x[1] <- 5}, \code{identical(x, y)} or \code{cumsum(x)}, is a
+\code{zuroar_error_unsupported} error. Compare bitmaps as sets with \code{==},
+and expand one explicitly with \code{as.double()}.
 
-To loop over the values, use \verb{for (v in as.double(x))}: R does not let
-a class define its own iteration.
+\code{format()} gives one line describing the bitmap, which \code{print()} shows.
+To loop over the values, use \verb{for (v in x)} or \code{lapply(x, f)}.
 }
 \examples{
 x <- roar(c(1, 5, 9, 100000))
 length(x)
+x[[2]]
+x[2:3]
+c(5, 6) \%in\% x
 range(x)
 as.integer(x)
 x

@@ -9,11 +9,18 @@
 * `roar()` and `roar_range()` build a 32-bit bitmap; `roar_add()` and
   `roar_remove()` return a changed copy, sharing unchanged containers;
   `roar_contains()` tests membership.
-* A bitmap behaves as a sorted vector for `length()`, `min()`, `max()`,
-  `range()`, `as.integer()`, `as.double()`, `format()` and `print()`.
+* A bitmap is an ALTREP double vector that reads its values from the
+  compressed form on demand and never expands behind your back: it
+  survives `saveRDS()`, `serialize()` and a trip to a `mirai` or
+  `parallel` worker, can be a data-frame column, and answers `length()`,
+  `x[[k]]`, `x[i]` (a bitmap), `head()`, `tail()`, `%in%`, `match()`,
+  `sum()`, `min()`, `max()`, `range()`, `as.integer()`, `as.double()`,
+  `format()`, `print()`, `for` and `lapply()`. An operation that would
+  need the values as a plain vector, such as `x[1] <- 5` or
+  `identical(x, y)`, is an error; compare sets with `==`.
 * Errors inherit from `zuroar_error`, with `zuroar_error_value`,
-  `zuroar_error_pointer`, `zuroar_error_unsupported` and
-  `zuroar_error_memory` for the specific cases.
+  `zuroar_error_index`, `zuroar_error_unsupported`, `zuroar_error_format`
+  and `zuroar_error_memory` for the specific cases.
 * Set algebra: `|`, `&`, `roar_xor()`, `roar_andnot()`, `roar_union()`,
   `roar_intersect()` and `c()` build bitmaps; `==`, `!=`, `<=`, `<`, `>=`
   and `>` compare them as sets; `roar_cardinality()`, `roar_jaccard()`,
