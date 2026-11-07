@@ -12,14 +12,15 @@ class says what went wrong:
   [`as.integer()`](https://rdrr.io/r/base/integer.html) on a bitmap
   holding a value above `.Machine$integer.max`.
 
-- `zuroar_error_pointer`: a bitmap whose pointer is null. A bitmap is an
-  external pointer, so it does not survive
-  [`saveRDS()`](https://rdrr.io/r/base/readRDS.html) and
-  [`readRDS()`](https://rdrr.io/r/base/readRDS.html) or a trip to
-  another process.
+- `zuroar_error_index`: a position outside `seq_len(length(x))`, or
+  `NA`, in `x[i]`.
 
 - `zuroar_error_unsupported`: an operation a set does not define, such
-  as [`sum()`](https://rdrr.io/r/base/sum.html) of a bitmap.
+  as `x > 5`, or one that would need the values as a plain vector, such
+  as `x[1] <- 5` or `identical(x, y)`.
+
+- `zuroar_error_format`: bytes that are not a valid portable Roaring
+  bitmap, for example a corrupt `.rds` file.
 
 - `zuroar_error_memory`: CRoaring could not allocate memory.
 

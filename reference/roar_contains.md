@@ -1,8 +1,8 @@
 # Test membership
 
 `roar_contains()` tells, for each of `values`, whether `x` holds it. It
-is the fast form of `values %in% x`, which works too but expands `x`
-into a vector first.
+is the fast form of `values %in% x`, which works too but visits every
+value of `x`.
 
 ## Usage
 
