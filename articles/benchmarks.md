@@ -132,26 +132,26 @@ run <- function(name) {
 
 run("dense")
 #>     set        expression median_ms mem_alloc
-#> 1 dense       union: base  1029.670  411.34MB
-#> 2 dense        union: bit     0.425    1.29MB
-#> 3 dense     union: zuroar     0.658   51.16KB
-#> 4 dense   intersect: base   987.453  392.28MB
-#> 5 dense    intersect: bit     0.410    1.22MB
-#> 6 dense intersect: zuroar     0.178        0B
-#> 7 dense      member: base   231.412   83.19MB
-#> 8 dense       member: bit     0.054  129.62KB
-#> 9 dense    member: zuroar     0.337   78.23KB
+#> 1 dense       union: base   997.684  411.34MB
+#> 2 dense        union: bit     0.427    1.29MB
+#> 3 dense     union: zuroar     0.664   51.16KB
+#> 4 dense   intersect: base   927.681  392.28MB
+#> 5 dense    intersect: bit     0.411    1.22MB
+#> 6 dense intersect: zuroar     0.181        0B
+#> 7 dense      member: base   218.652   83.19MB
+#> 8 dense       member: bit     0.053  129.62KB
+#> 9 dense    member: zuroar     0.335   78.23KB
 ```
 
 ``` r
 
 run("sparse")
 #>      set        expression median_ms mem_alloc
-#> 1 sparse       union: base     0.547  892.43KB
-#> 2 sparse        union: bit     0.408    1.19MB
-#> 3 sparse     union: zuroar     0.035        0B
-#> 4 sparse   intersect: base     0.506  736.13KB
-#> 5 sparse    intersect: bit     0.415    1.19MB
+#> 1 sparse       union: base     0.548  892.43KB
+#> 2 sparse        union: bit     0.409    1.19MB
+#> 3 sparse     union: zuroar     0.036        0B
+#> 4 sparse   intersect: base     0.509  736.13KB
+#> 5 sparse    intersect: bit     0.413    1.19MB
 #> 6 sparse intersect: zuroar     0.018        0B
 #> 7 sparse      member: base     0.201  284.48KB
 #> 8 sparse       member: bit     0.054   78.22KB
@@ -162,15 +162,15 @@ run("sparse")
 
 run("runs")
 #>    set        expression median_ms mem_alloc
-#> 1 runs       union: base   159.263  271.48MB
-#> 2 runs        union: bit     0.408    1.19MB
+#> 1 runs       union: base   206.642  271.48MB
+#> 2 runs        union: bit     0.412    1.19MB
 #> 3 runs     union: zuroar     0.010        0B
-#> 4 runs   intersect: base   159.013  256.22MB
-#> 5 runs    intersect: bit     0.409    1.19MB
+#> 4 runs   intersect: base   145.530  256.22MB
+#> 5 runs    intersect: bit     0.410    1.19MB
 #> 6 runs intersect: zuroar     0.009        0B
-#> 7 runs      member: base    35.454   47.37MB
-#> 8 runs       member: bit     0.054   78.22KB
-#> 9 runs    member: zuroar     0.316   78.23KB
+#> 7 runs      member: base    33.129   47.37MB
+#> 8 runs       member: bit     0.053   78.22KB
+#> 9 runs    member: zuroar     0.315   78.23KB
 ```
 
 ## Reading the results
