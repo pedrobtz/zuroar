@@ -170,6 +170,8 @@
 <li>
 <strong>The <code>mirai</code> tests need the installed package</strong> (the daemon is a fresh R process), so they skip under <code>devtools::test()</code> and run under <code>R CMD check</code>. With a serial configuration they need mirai’s default dispatcher: <code>dispatcher = FALSE</code> does not apply it.</li>
 <li>
+<strong><code>tests/testthat.R</code> runs only when testthat is installed.</strong> The <code>nosuggests</code> leg (CRAN’s NOSUGGESTS flavour) checks with no Suggests at all; an unguarded <code><a href="https://testthat.r-lib.org" class="external-link">library(testthat)</a></code> is an ERROR there and nowhere else.</li>
+<li>
 <strong>Keep the suite inside the CRAN time budget.</strong> It runs in seconds.</li>
 </ul></div>
 <div class="section level2">

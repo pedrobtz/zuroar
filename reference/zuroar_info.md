@@ -34,6 +34,6 @@ zuroar_info()
 #> [1] "avx2"   "avx512"
 #> 
 #> $runtime
-#> [1] "avx2"
+#> [1] "avx2"   "avx512"
 #> 
 ```
