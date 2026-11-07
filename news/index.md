@@ -65,3 +65,31 @@
   [`roar_shift()`](https://pedrobtz.github.io/zuroar/reference/roar_shift.md)
   shift every value; leaving the domain is an error unless
   `roar_shift(drop = TRUE)`.
+
+- Ordered queries:
+  [`roar_rank()`](https://pedrobtz.github.io/zuroar/reference/roar_rank.md),
+  [`roar_select()`](https://pedrobtz.github.io/zuroar/reference/roar_rank.md)
+  (from 1),
+  [`roar_next()`](https://pedrobtz.github.io/zuroar/reference/roar_rank.md),
+  [`roar_prev()`](https://pedrobtz.github.io/zuroar/reference/roar_rank.md),
+  [`roar_count()`](https://pedrobtz.github.io/zuroar/reference/roar_rank.md)
+  and
+  [`roar_contains_range()`](https://pedrobtz.github.io/zuroar/reference/roar_rank.md),
+  with inclusive ranges;
+  [`roar_values()`](https://pedrobtz.github.io/zuroar/reference/roar_values.md)
+  extracts a bounded number of values.
+  [`roar_add()`](https://pedrobtz.github.io/zuroar/reference/roar_add.md)
+  and
+  [`roar_remove()`](https://pedrobtz.github.io/zuroar/reference/roar_add.md)
+  take `from` and `to` for a range.
+
+- [`sort()`](https://rdrr.io/r/base/sort.html) and
+  [`unique()`](https://rdrr.io/r/base/unique.html) return the bitmap;
+  `[<-`, `[[<-`, [`rev()`](https://rdrr.io/r/base/rev.html) and
+  `sort(decreasing = TRUE)` are errors.
+
+- [`roar_optimize()`](https://pedrobtz.github.io/zuroar/reference/roar_optimize.md),
+  [`roar_stats()`](https://pedrobtz.github.io/zuroar/reference/roar_optimize.md)
+  and
+  [`roar_size()`](https://pedrobtz.github.io/zuroar/reference/roar_optimize.md)
+  show and tune how a bitmap is stored.

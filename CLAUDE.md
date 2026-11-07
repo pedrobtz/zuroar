@@ -135,6 +135,12 @@ Grows as stages land; see `.agents/design.md` §4.
   in R from [`min()`](https://rdrr.io/r/base/Extremes.html) and
   [`max()`](https://rdrr.io/r/base/Extremes.html) before CRoaring’s
   `add_offset()`, which drops silently.
+- `src/zro_order.c`, `R/order.R`, `R/index.R`: rank, select, next and
+  previous, ranges, bounded extraction, storage, and positional access.
+  `[.zuroar` turns the index into sorted runs of positions in R, and
+  `zro_subset()` reads runs longer than 64 positions as a range
+  intersection, shorter ones through an iterator. The ALTREP
+  `Extract_subset` serves only C callers that bypass dispatch.
 - `src/zro_info.c`, `R/info.R`:
   [`zuroar_info()`](https://pedrobtz.github.io/zuroar/reference/zuroar_info.md).
 - `src/zro_selftest.c`: an unexported oracle hook,
@@ -169,10 +175,13 @@ one when a stage establishes it.
   reads them through the bounded path, so
   [`saveRDS()`](https://rdrr.io/r/base/readRDS.html) works. Consequences
   to keep in mind: `identical(x, y)` is that error (use `==`), and so is
-  `expect_identical()` on two bitmaps; base `[` drops the class of what
-  `Extract_subset` returns, so `[.zuroar` puts it back;
-  [`sum()`](https://rdrr.io/r/base/sum.html) goes through the `Sum`
-  method, every other Summary member through `Summary.zuroar`.
+  `expect_identical()` on two bitmaps; `Summary.zuroar` calls the exact
+  C sum itself, because R 4.6 was seen to skip the ALTREP `Sum` method
+  and add in `long double`, a plain double on arm64 macOS; and tests
+  call [`.Call()`](https://rdrr.io/r/base/CallExternal.html) only
+  through package functions (`R/hooks.R`), because rcnst compares
+  uncompiled [`.Call()`](https://rdrr.io/r/base/CallExternal.html)
+  arguments with [`identical()`](https://rdrr.io/r/base/identical.html).
 - **An attached bitmap is never modified.** `zro_attach()` is the last
   write; every binding builds a new bitmap (D4). The read cursor in
   `zro_bitmap_t` holds a CRoaring iterator into the containers, and
@@ -189,8 +198,10 @@ one when a stage establishes it.
   `zuroar_error_pointer` naming `roar_serialize()` (D5). Skipping the
   check is a segfault.
 - **R conventions at the boundary:** ranges are inclusive and become
-  CRoaring’s half-open `[min, max)`; `roar_select()` counts from 1 where
-  CRoaring counts from 0 (D6). Off-by-one errors here pass most tests.
+  CRoaring’s half-open `[min, max)`;
+  [`roar_select()`](https://pedrobtz.github.io/zuroar/reference/roar_rank.md)
+  counts from 1 where CRoaring counts from 0 (D6). Off-by-one errors
+  here pass most tests.
 - **No architecture flags in `Makevars`.** No `-mavx2` or `-march`; SIMD
   comes from CRoaring’s run-time dispatch (D3). CRAN rejects such flags.
 - **CRoaring’s symbols stay hidden.** The wrapper unit is the only

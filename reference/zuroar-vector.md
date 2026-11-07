@@ -27,9 +27,6 @@ another R process on its own.
 
 ``` r
 # S3 method for class 'zuroar'
-x[i, ...]
-
-# S3 method for class 'zuroar'
 as.data.frame(
   x,
   row.names = NULL,
@@ -63,21 +60,15 @@ print(x, n = 10, ...)
 
   A bitmap.
 
-- i:
+- row.names, optional, nm:
 
-  Positions, from 1, as in `[` on a vector: positive to select, negative
-  to exclude, or a logical mask. `NA` and a position past the end are
-  `zuroar_error_index` errors.
+  As for
+  [`as.data.frame.vector()`](https://rdrr.io/r/base/as.data.frame.html).
 
 - ...:
 
   For `Summary`, further arguments, which must be absent. For the
   others, ignored or passed on.
-
-- row.names, optional, nm:
-
-  As for
-  [`as.data.frame.vector()`](https://rdrr.io/r/base/as.data.frame.html).
 
 - na.rm:
 

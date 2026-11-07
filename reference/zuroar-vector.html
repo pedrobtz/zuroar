@@ -77,9 +77,6 @@ another R process on its own.</p>
     <div class="section level2">
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="co"># S3 method for class 'zuroar'</span></span>
-<span><span class="va">x</span><span class="op">[</span><span class="va">i</span>, <span class="va">...</span><span class="op">]</span></span>
-<span></span>
-<span><span class="co"># S3 method for class 'zuroar'</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/as.data.frame.html" class="external-link">as.data.frame</a></span><span class="op">(</span></span>
 <span>  <span class="va">x</span>,</span>
 <span>  row.names <span class="op">=</span> <span class="cn">NULL</span>,</span>
@@ -115,19 +112,13 @@ another R process on its own.</p>
 <dd><p>A bitmap.</p></dd>
 
 
-<dt id="arg-i">i<a class="anchor" aria-label="anchor" href="#arg-i"></a></dt>
-<dd><p>Positions, from 1, as in <code>[</code> on a vector: positive to select,
-negative to exclude, or a logical mask. <code>NA</code> and a position past the
-end are <code>zuroar_error_index</code> errors.</p></dd>
+<dt id="arg-row-names-optional-nm">row.names, optional, nm<a class="anchor" aria-label="anchor" href="#arg-row-names-optional-nm"></a></dt>
+<dd><p>As for <code><a href="https://rdrr.io/r/base/as.data.frame.html" class="external-link">as.data.frame.vector()</a></code>.</p></dd>
 
 
 <dt id="arg--">...<a class="anchor" aria-label="anchor" href="#arg--"></a></dt>
 <dd><p>For <code>Summary</code>, further arguments, which must be absent. For
 the others, ignored or passed on.</p></dd>
-
-
-<dt id="arg-row-names-optional-nm">row.names, optional, nm<a class="anchor" aria-label="anchor" href="#arg-row-names-optional-nm"></a></dt>
-<dd><p>As for <code><a href="https://rdrr.io/r/base/as.data.frame.html" class="external-link">as.data.frame.vector()</a></code>.</p></dd>
 
 
 <dt id="arg-na-rm">na.rm<a class="anchor" aria-label="anchor" href="#arg-na-rm"></a></dt>

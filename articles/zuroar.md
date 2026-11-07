@@ -54,9 +54,13 @@ c(x, roar(42L)) + 10
 ## Ask questions
 
 [`roar_contains()`](https://pedrobtz.github.io/zuroar/reference/roar_contains.md)
-is the fast membership test. Ranges are inclusive, `roar_rank()` counts
-the values at or below one, `roar_select()` finds the `k`-th smallest,
-and `roar_next()` the nearest value above.
+is the fast membership test. Ranges are inclusive,
+[`roar_rank()`](https://pedrobtz.github.io/zuroar/reference/roar_rank.md)
+counts the values at or below one,
+[`roar_select()`](https://pedrobtz.github.io/zuroar/reference/roar_rank.md)
+finds the `k`-th smallest, and
+[`roar_next()`](https://pedrobtz.github.io/zuroar/reference/roar_rank.md)
+the nearest value above.
 
 ``` r
 
