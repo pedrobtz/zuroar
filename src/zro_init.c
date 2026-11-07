@@ -28,6 +28,8 @@ static const R_CallMethodDef zro_call_methods[] = {
     {"zro_flip", (DL_FUNC)&zro_flip, 2},
     {"zro_shift", (DL_FUNC)&zro_shift, 2},
     {"zro_sum", (DL_FUNC)&zro_sum, 1},
+    {"zro_serialize", (DL_FUNC)&zro_serialize, 2},
+    {"zro_unserialize", (DL_FUNC)&zro_unserialize, 2},
     {"zro_rank", (DL_FUNC)&zro_rank, 2},
     {"zro_select", (DL_FUNC)&zro_select, 2},
     {"zro_next", (DL_FUNC)&zro_next, 2},

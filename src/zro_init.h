@@ -50,4 +50,8 @@ SEXP zro_optimize(SEXP a0);
 SEXP zro_size(SEXP a0);
 SEXP zro_stats(SEXP a0);
 
+/* zro_serial.c */
+SEXP zro_serialize(SEXP a0, SEXP a1);
+SEXP zro_unserialize(SEXP a0, SEXP a1);
+
 #endif /* ZRO_INIT_H */

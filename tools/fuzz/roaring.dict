@@ -1,0 +1,7 @@
+# Portable Roaring cookies (little-endian): no runs, and with runs.
+"\x3a\x30\x00\x00"
+"\x3b\x30"
+"\x3b\x30\x00\x00"
+"\x3b\x30\x01\x00"
+"\xff\xff"
+"\x00\x10"

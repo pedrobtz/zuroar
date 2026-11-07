@@ -62,6 +62,17 @@ jobs:
         shell: bash
         run: tools/check-symbols
 
+      # D8: untrusted bytes go only through zro_portable_read(). The
+      # unsafe deserialiser may appear in vendored CRoaring, never outside.
+      - name: No unsafe deserialiser in first-party code
+        shell: bash
+        run: |
+          if grep -rnE 'roaring(64)?_bitmap_portable_deserialize[[:space:]]*\(' src --include='*.c' --include='*.h' | grep -v '^src/croaring/'; then
+            echo "roaring_bitmap_portable_deserialize() called outside src/croaring/" >&2
+            exit 1
+          fi
+          echo "only the bounded reader is used"
+
       - name: Test
         shell: Rscript {0}
         run: |

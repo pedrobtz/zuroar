@@ -34,7 +34,7 @@ methods and bindings reach the bitmap through `zro_get()`.
 | 3 | [Set algebra](#stage-3--set-algebra) | quick | [#5](https://github.com/pedrobtz/zuroar/issues/5) | [#18](https://github.com/pedrobtz/zuroar/pull/18) | 2026-11-06 |
 | 4 | [ALTREP representation](#stage-4--altrep-representation) | full | [#20](https://github.com/pedrobtz/zuroar/issues/20) | [#23](https://github.com/pedrobtz/zuroar/pull/23) | 2026-11-06 |
 | 5 | [Rank, select and ranges](#stage-5--rank-select-and-ranges) | quick | [#6](https://github.com/pedrobtz/zuroar/issues/6) | [#19](https://github.com/pedrobtz/zuroar/pull/19) | 2026-11-07 |
-| 6 | [Portable serialisation](#stage-6--portable-serialisation) | full | [#7](https://github.com/pedrobtz/zuroar/issues/7) | | |
+| 6 | [Portable serialisation](#stage-6--portable-serialisation) | full | [#7](https://github.com/pedrobtz/zuroar/issues/7) | | 2026-11-07 |
 | 7 | [64-bit bitmaps](#stage-7--64-bit-bitmaps) | quick | [#8](https://github.com/pedrobtz/zuroar/issues/8) | | |
 | 8 | [README, article and benchmarks](#stage-8--readme-article-and-benchmarks) | quick | [#9](https://github.com/pedrobtz/zuroar/issues/9) | | |
 | 9 | [Full CI](#stage-9--full-ci) | full | [#10](https://github.com/pedrobtz/zuroar/issues/10) | | |

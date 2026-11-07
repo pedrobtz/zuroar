@@ -36,3 +36,9 @@
   `sort(decreasing = TRUE)` are errors.
 * `roar_optimize()`, `roar_stats()` and `roar_size()` show and tune how a
   bitmap is stored.
+* `roar_serialize()` and `roar_unserialize()` write and read the portable
+  Roaring format shared with Java, Go, Rust and Python. Reading treats the
+  bytes as untrusted: bounded, validated, and a `zuroar_error_format` on
+  anything corrupt, including a corrupt `.rds` file. `roar_serial_config()`
+  configures `mirai` daemons for the 64-bit class to come; 32-bit bitmaps
+  need no configuration.
