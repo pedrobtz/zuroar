@@ -25,6 +25,10 @@ jobs:
       # CRAN's NOSUGGESTS flavour: the package must degrade cleanly without
       # mirai, pillar and withr (Stage 6 exit criterion). Full profile only.
       nosuggests: true
+      # CRAN's NOLD flavour, R built without long double: zuroar parses
+      # decimal text to 64-bit values and relies on exact doubles, and the
+      # arm64 sum() bug of Stage 4 was a long double one (Stage 10).
+      nold: true
       # The shared default plus Windows R-devel, the combination CRAN's own
       # Windows R-devel check runs. Full profile only.
       runners: |

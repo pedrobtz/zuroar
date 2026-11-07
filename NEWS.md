@@ -1,7 +1,7 @@
-# zuroar 0.0.0.9000
+# zuroar 0.1.0
 
 * New package: compressed sets of unsigned integers built on a bundled
-  copy of CRoaring 5.4.0. In development towards the first CRAN release.
+  copy of CRoaring 5.4.0. First release.
 
 * `zuroar_info()` reports the bundled CRoaring version, the SIMD paths
   compiled in, and the instruction sets the processor offers.
