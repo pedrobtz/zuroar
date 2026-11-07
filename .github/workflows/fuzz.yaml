@@ -1,0 +1,43 @@
+on:
+  pull_request:
+  schedule:
+    # Weekly: a small target over vendored code that rarely changes.
+    - cron: "17 3 * * 0"
+  workflow_dispatch:
+
+name: fuzz
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.run_id }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+# Coverage-guided fuzzing of roar_unserialize()'s reader (design §8). The
+# harness compiles CRoaring and src/zro_portable.c without R; the
+# committed pyroaring and Java fixtures are the seed corpus.
+jobs:
+  fuzz:
+    uses: pedrobtz/r-actions/.github/workflows/fuzz.yml@v1
+    with:
+      harness: tools/fuzz/harness.c
+      sources: src/zro_portable.c
+      cflags: -g -O1 -fno-omit-frame-pointer -DZRO_FUZZ -Isrc
+      seed-corpus: tests/testthat/fixtures
+      dictionary: tools/fuzz/roaring.dict
+      max-total-time: ${{ github.event_name == 'schedule' && 1800 || 120 }}
+
+  # Files one issue per distinct finding from a scheduled run.
+  report:
+    needs: fuzz
+    if: ${{ always() && github.event_name == 'schedule' && needs.fuzz.result != 'skipped' }}
+    permissions:
+      issues: write
+    uses: pedrobtz/r-actions/.github/workflows/report.yml@4062705ecc3560e85ec8045b30d0e9951fa447a2 # v1 (v1.30.0)
+    with:
+      name: fuzz
+      result: ${{ needs.fuzz.result }}
+      finding: ${{ needs.fuzz.outputs.finding }}
+      key: ${{ needs.fuzz.outputs.finding-key }}
+      details: ${{ needs.fuzz.outputs.report }}

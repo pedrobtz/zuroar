@@ -35,11 +35,4 @@ void zro_init_altrep(DllInfo *dll);
  * may be held while it runs. */
 void zro_values_u32(SEXP v, uint32_t *out);
 
-/* Reads a portable bitmap from untrusted bytes through the bounded path
- * (D8): size check, safe deserialiser, then structural validation. Returns
- * the bitmap and sets `*used` to the bytes it took, or returns NULL with
- * `*reason` set. Pure CRoaring: never signals. */
-roaring_bitmap_t *zro_portable_read(const unsigned char *buf, size_t len,
-                                    size_t *used, const char **reason);
-
 #endif /* ZRO_BITMAP_H */

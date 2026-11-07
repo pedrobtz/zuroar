@@ -32,30 +32,6 @@ NORET void zro_abort(const char *cls, const char *fmt, ...) {
   Rf_error("%s", msg); /* not reached: zro_abort() always signals */
 }
 
-/* --- Portable bytes ----------------------------------------------------- */
-
-roaring_bitmap_t *zro_portable_read(const unsigned char *buf, size_t len,
-                                    size_t *used, const char **reason) {
-  *used = 0;
-  size_t need = roaring_bitmap_portable_deserialize_size((const char *)buf, len);
-  if (need == 0) {
-    *reason = "the header is not a Roaring bitmap's, or the bytes are truncated";
-    return NULL;
-  }
-  roaring_bitmap_t *r =
-      roaring_bitmap_portable_deserialize_safe((const char *)buf, need);
-  if (r == NULL) {
-    *reason = "the bytes could not be read as containers";
-    return NULL;
-  }
-  if (!roaring_bitmap_internal_validate(r, reason)) {
-    roaring_bitmap_free(r);
-    return NULL;
-  }
-  *used = need;
-  return r;
-}
-
 /* --- Values ------------------------------------------------------------- */
 
 #define ZRO_DOMAIN "must be whole numbers from 0 to 4294967295"

@@ -18,6 +18,7 @@
 #include <R_ext/Altrep.h>
 
 #include "zro_init.h"
+#include "zro_portable.h"
 
 #define ZRO_CHUNK 4096
 
@@ -273,7 +274,7 @@ static SEXP zro_alt_unserialize(SEXP class, SEXP state) {
   size_t len = (size_t)XLENGTH(state);
   size_t used = 0;
   const char *reason = NULL;
-  roaring_bitmap_t *r = zro_portable_read(RAW(state), len, &used, &reason);
+  roaring_bitmap_t *r = zro_portable_read((const char *)RAW(state), len, &used, &reason);
   if (r == NULL) {
     zro_abort("zuroar_error_format",
               "The saved bytes are not a valid portable Roaring bitmap: %s.",

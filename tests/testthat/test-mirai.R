@@ -19,3 +19,29 @@ test_that("a bitmap travels to a mirai daemon and back with no serial config", {
   expect_s3_class(y, "zuroar")
   expect_identical(as.double(y), c(1, 7, 8, 100000))
 })
+
+test_that("a bitmap travels to a mirai daemon with roar_serial_config() set", {
+  skip_on_cran()
+  skip_if_not_installed("mirai", "2.3.0")
+  installed <- file.exists(file.path(
+    system.file(package = "zuroar"),
+    "R",
+    "zuroar.rdb"
+  ))
+  skip_if_not(installed, "zuroar is not installed")
+
+  # The default dispatcher: with dispatcher = FALSE the serial
+  # configuration is not applied.
+  mirai::daemons(1, serial = roar_serial_config())
+  withr::defer(mirai::daemons(0))
+  x <- roar(c(1, 5, 9, 4294967295))
+  m <- mirai::mirai(zuroar::roar_add(x, 7), x = x)
+  y <- mirai::call_mirai(m)$data
+  expect_s3_class(y, "zuroar")
+  expect_identical(as.double(y), c(1, 5, 7, 9, 4294967295))
+})
+
+test_that("roar_serial_config() returns a mirai configuration", {
+  skip_if_not_installed("mirai", "2.3.0")
+  expect_type(roar_serial_config(), "list")
+})

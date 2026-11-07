@@ -111,8 +111,7 @@ Grows as stages land; see `.agents/design.md` §4.
   `Duplicate` is a copy-on-write copy; `Serialized_state` and
   `Unserialize` are the portable bytes. Three `zro_test_*` routines exist
   for the tests only.
-- `src/zro_bitmap.c`, `src/zro_bitmap.h`: the 32-bit bindings and the
-  bounded reader `zro_portable_read()`. Entry points allocate the result
+- `src/zro_bitmap.c`, `src/zro_bitmap.h`: the 32-bit bindings. Entry points allocate the result
   shell first (`zro_shell()`), then build the bitmap, then `zro_attach()`
   it, so no R allocation can leak one. `zro_get()` checks the class and
   `zro_abort()` signals a classed condition through the R-level
@@ -130,6 +129,12 @@ Grows as stages land; see `.agents/design.md` §4.
   `zro_subset()` reads runs longer than 64 positions as a range
   intersection, shorter ones through an iterator. The ALTREP
   `Extract_subset` serves only C callers that bypass dispatch.
+- `src/zro_portable.c`, `src/zro_portable.h`: `zro_portable_read()`, the
+  bounded reader (size check, safe deserialiser, validation), in plain C
+  so `tools/fuzz/harness.c` fuzzes exactly what the package runs. Both
+  `roar_unserialize()` and the ALTREP `Unserialize` (a `readRDS()`) use it.
+- `src/zro_serial.c`, `R/serial.R`: `roar_serialize()`,
+  `roar_unserialize()` and `roar_serial_config()`.
 - `src/zro_info.c`, `R/info.R`: `zuroar_info()`.
 - `src/zro_selftest.c`: an unexported oracle hook, `.Call(zro_selftest, x,
   y, optimize)`, so the build variants test CRoaring before the bindings
@@ -194,6 +199,12 @@ when a stage establishes it.
   is an error, not a conversion to a plain vector or a dropped value (D11,
   D12).
 - **No `Imports`.** A runtime dependency needs a design decision first.
+- **CRoaring ignores the offset header** when reading portable bytes; a
+  corrupted offset reads the right set, not an error (design §8).
+- **Comments must not name the unsafe deserialiser with parentheses.**
+  `build-variants` greps first-party `src/` for
+  `roaring(64)?_bitmap_portable_deserialize(` and fails on any match,
+  comments included.
 - **`format()`, `print()` and `type_sum()` never signal.** R, testthat
   and rlang format objects while handling a condition; a second error
   there escapes the handler. For a `zuroar64` they describe a null
@@ -238,6 +249,16 @@ when a stage establishes it.
   Call them inside `test_that()` after `withr::local_seed()`.
 - **`length()` is an integer when it fits.** R's dispatch converts a
   method's double; compare with `length(oracle(v))`, not a double.
+- **Interoperability fixtures** in `tests/testthat/fixtures/` are written
+  by pyroaring 1.2.0 and Java RoaringBitmap 1.3.0 from `sets.txt` with
+  `tools/fixtures/make-fixtures` (needs uv and a JDK); the `fixtures`
+  workflow regenerates them and fails on any byte difference. Both writers
+  produce identical bytes. pyroaring's `update()` hangs on a stepped
+  `range`; pass a list.
+- **The `mirai` tests need the installed package** (the daemon is a fresh
+  R process), so they skip under `devtools::test()` and run under
+  `R CMD check`. With a serial configuration they need mirai's default
+  dispatcher: `dispatcher = FALSE` does not apply it.
 - **Keep the suite inside the CRAN time budget.** It runs in seconds.
 
 ## Definition of done
@@ -288,8 +309,10 @@ of writing bespoke ones, and pin a released tag rather than `main`. Pin a
 workflow that holds a write token, such as `coverage.yml`, to a commit, with
 the tag in a comment. The `R-CMD-check` workflow must call `r-cmd-check.yml`,
 because a hand-rolled one does not count as the pre-submission check. This
-package calls `r-cmd-check.yml@v1`; `coverage.yml` and `vendor-upstream.yml`
-(write tokens) pinned to the `v1` commit; `native-checks.yaml` (sanitizers,
+package calls `r-cmd-check.yml@v1`; `coverage.yml`, `vendor-upstream.yml`
+and `report.yml` (write tokens) pinned to the `v1` commit; `fuzz.yaml`
+(libFuzzer over `zro_portable_read()`, seeded by the fixtures) and
+`fixtures.yaml` (development only); `native-checks.yaml` (sanitizers,
 valgrind, LTO, rchk, analyzers, cran-special), `gctorture.yaml` and
 `vendor.yaml` at `@v1`. `build-variants.yaml` is the package's own
 development-only job (design §7.4): it builds the default, no-AVX-512 and

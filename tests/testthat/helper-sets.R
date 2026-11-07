@@ -39,3 +39,39 @@ gen_values <- function() {
 
 # The oracle: what a bitmap of `v` must hold.
 oracle <- function(v) sort(unique(as.double(v)))
+
+# The fixture sets of tests/testthat/fixtures/sets.txt, which
+# tools/fixtures/make-fixtures wrote with pyroaring and Java.
+fixture_sets <- function() {
+  path <- test_path("fixtures", "sets.txt")
+  lines <- readLines(path)
+  lines <- lines[nzchar(lines) & !startsWith(lines, "#")]
+  out <- list()
+  for (line in lines) {
+    f <- strsplit(line, "\t", fixed = TRUE)[[1]]
+    pieces <- if (length(f) < 3 || !nzchar(f[3])) {
+      character()
+    } else {
+      strsplit(f[3], ",", fixed = TRUE)[[1]]
+    }
+    values <- unlist(lapply(pieces, function(p) {
+      step <- 1
+      if (grepl("/", p, fixed = TRUE)) {
+        step <- as.numeric(sub(".*/", "", p))
+        p <- sub("/.*", "", p)
+      }
+      ab <- as.numeric(strsplit(p, "-", fixed = TRUE)[[1]])
+      if (length(ab) == 1) ab else seq(ab[1], ab[2], by = step)
+    }))
+    out[[f[1]]] <- list(
+      values = sort(unique(c(numeric(), values))),
+      optimize = f[2] == "1"
+    )
+  }
+  out
+}
+
+fixture_bytes <- function(name, writer) {
+  path <- test_path("fixtures", paste0(name, ".", writer, ".bin"))
+  readBin(path, "raw", file.size(path))
+}

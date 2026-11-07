@@ -1,0 +1,28 @@
+#!/bin/sh
+# Regenerates the interoperability fixtures in tests/testthat/fixtures/
+# from tests/testthat/fixtures/sets.txt, with pyroaring and Java's RoaringBitmap.
+# Development only: needs uv, a JDK and network access. Run from the
+# package root. The fixtures workflow runs it and fails on any difference
+# from the committed bytes.
+set -eu
+
+PYROARING=1.2.0
+ROARINGBITMAP=1.3.0
+JAR_SHA256=73443a71a2e2401c7d518a487983539fcaf5f9652efbd178f929e7b6d36881d0
+
+uv run --no-project --with "pyroaring==$PYROARING" python -I tools/fixtures/make_pyroaring.py .
+
+WORK=$(mktemp -d)
+trap 'rm -rf "$WORK"' EXIT
+JAR="$WORK/RoaringBitmap-$ROARINGBITMAP.jar"
+curl -fsSL --retry 3 -o "$JAR" \
+  "https://repo1.maven.org/maven2/org/roaringbitmap/RoaringBitmap/$ROARINGBITMAP/RoaringBitmap-$ROARINGBITMAP.jar"
+if command -v sha256sum >/dev/null 2>&1; then
+  got=$(sha256sum "$JAR" | cut -d' ' -f1)
+else
+  got=$(shasum -a 256 "$JAR" | cut -d' ' -f1)
+fi
+[ "$got" = "$JAR_SHA256" ] || { echo "RoaringBitmap jar sha256 mismatch: $got" >&2; exit 1; }
+javac -d "$WORK" -cp "$JAR" tools/fixtures/MakeFixtures.java
+java -cp "$WORK:$JAR" MakeFixtures .
+echo "RoaringBitmap $ROARINGBITMAP"

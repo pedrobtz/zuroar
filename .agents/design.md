@@ -627,7 +627,10 @@ wrapper unit, so the file that includes `roaring.c` holds nothing else.
   development job; both must read `roar_serialize()` output.
 - **Hostile input.** Truncation at every byte of a small fixture and
   corrupted cookies, container counts, offsets and run lengths: each is a
-  `zuroar_error_format`, none crashes under ASan and UBSan. A `libFuzzer`
+  `zuroar_error_format`, none crashes under ASan and UBSan. *Amended
+  2026-11-06 (Stage 6):* CRoaring never follows the offset header; it
+  reads containers in sequence, so a corrupted offset reads the right set
+  rather than erroring, and the test says so. A `libFuzzer`
   target over the deserialising entry point runs in development.
 - **Lifetimes.** Collection of shared copy-on-write containers, null
   pointers after `readRDS()` of a `zuroar64`, and the ALTREP methods of
