@@ -1,7 +1,7 @@
 # the data pointer is refused with a message naming as.double()
 
     Code
-      .Call(zro_test_dataptr, roar(1))
+      test_dataptr(roar(1))
     Condition
       Error:
       ! This operation needs the bitmap as a plain vector, which zuroar never builds on its own. Use as.double(x) to expand it, or a bounded query such as head(x) or roar_contains().

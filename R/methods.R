@@ -61,7 +61,22 @@ NULL
 
 #' @rdname zuroar-vector
 #' @export
-as.data.frame.zuroar <- as.data.frame.vector
+as.data.frame.zuroar <- function(
+  x,
+  row.names = NULL,
+  optional = FALSE,
+  ...,
+  nm = deparse1(substitute(x))
+) {
+  force(nm)
+  as.data.frame.vector(
+    x,
+    row.names = row.names,
+    optional = optional,
+    ...,
+    nm = nm
+  )
+}
 
 #' @rdname zuroar-vector
 #' @export
@@ -83,8 +98,8 @@ Summary.zuroar <- function(..., na.rm = FALSE) {
     )
   }
   if (.Generic == "sum") {
-    # One pass through the ALTREP Get_region method; no expansion.
-    return(NextMethod())
+    # Exact on every platform: each run of values is added as a series.
+    return(.Call(zro_sum, args[[1]]))
   }
   x <- args[[1]]
   if (.Call(zro_cardinality, x) == 0) {

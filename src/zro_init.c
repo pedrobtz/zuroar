@@ -27,6 +27,7 @@ static const R_CallMethodDef zro_call_methods[] = {
     {"zro_many", (DL_FUNC)&zro_many, 2},
     {"zro_flip", (DL_FUNC)&zro_flip, 2},
     {"zro_shift", (DL_FUNC)&zro_shift, 2},
+    {"zro_sum", (DL_FUNC)&zro_sum, 1},
     {"zro_test_dataptr", (DL_FUNC)&zro_test_dataptr, 1},
     {"zro_test_state", (DL_FUNC)&zro_test_state, 1},
     {"zro_test_unserialize", (DL_FUNC)&zro_test_unserialize, 1},

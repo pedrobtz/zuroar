@@ -311,6 +311,13 @@ static Rboolean zro_alt_inspect(SEXP x, int pre, int deep, int pvec,
   return TRUE;
 }
 
+/* sum() for Summary.zuroar. R reaches the ALTREP Sum method only through
+ * an internal fast path; on R 4.6 a classed bitmap's sum() was seen to
+ * skip it and add the values one at a time in long double, which is a
+ * plain double on arm64 macOS and inexact past 2^53. Calling the method
+ * directly makes the result exact on every platform. */
+SEXP zro_sum(SEXP x) { return zro_alt_sum(x, FALSE); }
+
 /* --- Test hooks --------------------------------------------------------- */
 
 /* Asks R for the data pointer, as base or third-party C would. */

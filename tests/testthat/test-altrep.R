@@ -29,31 +29,31 @@ test_that("a bitmap survives serialize() and unserialize(), attributes too", {
 
 test_that("saved bytes are written on demand, not kept at rest", {
   x <- roar_range(1, 1e6)
-  state <- .Call(zro_test_state, x)
+  state <- test_state(x)
   expect_type(state, "raw")
   expect_lt(length(state), 1000)
-  expect_true(.Call(zro_test_unserialize, state) == x)
+  expect_true(test_unserialize(state) == x)
 })
 
 test_that("corrupt saved bytes are a zuroar_error_format, never a crash", {
   x <- roar(c(1, 5, 9, 70000, 70001, 70002))
-  state <- .Call(zro_test_state, x)
+  state <- test_state(x)
   # Truncated at every byte, including to nothing.
   for (n in 0:(length(state) - 1)) {
     expect_error(
-      .Call(zro_test_unserialize, state[seq_len(n)]),
+      test_unserialize(state[seq_len(n)]),
       class = "zuroar_error_format"
     )
   }
   # Trailing bytes, a wrong type, and a corrupt cookie.
   expect_error(
-    .Call(zro_test_unserialize, c(state, as.raw(0))),
+    test_unserialize(c(state, as.raw(0))),
     class = "zuroar_error_format"
   )
-  expect_error(.Call(zro_test_unserialize, 1), class = "zuroar_error_format")
+  expect_error(test_unserialize(1), class = "zuroar_error_format")
   bad <- state
   bad[[2]] <- xor(bad[[2]], as.raw(0xff))
-  expect_error(.Call(zro_test_unserialize, bad), class = "zuroar_error_format")
+  expect_error(test_unserialize(bad), class = "zuroar_error_format")
 
   # The same through R's own stream: find the state inside it and flip it.
   stream <- serialize(x, NULL)
@@ -181,7 +181,7 @@ test_that("nothing expands roar_range(0, 2^32 - 1)", {
   expect_error(x + 1, class = "zuroar_error_value")
   expect_error(x[1] <- 5, class = "zuroar_error_unsupported")
   expect_error(unclass(x) + 1, class = "zuroar_error_unsupported")
-  expect_error(.Call(zro_test_dataptr, x), class = "zuroar_error_unsupported")
+  expect_error(test_dataptr(x), class = "zuroar_error_unsupported")
   expect_identical(sum(x), 2^63 - 2^31)
   expect_true(x == x)
 })
@@ -189,7 +189,7 @@ test_that("nothing expands roar_range(0, 2^32 - 1)", {
 test_that("the data pointer is refused from C and from base R", {
   x <- roar(1:3)
   y <- roar(1:3)
-  expect_error(.Call(zro_test_dataptr, x), class = "zuroar_error_unsupported")
+  expect_error(test_dataptr(x), class = "zuroar_error_unsupported")
   # identical() reads through the data pointer on every R version; == is
   # the set equality.
   expect_error(identical(x, y), class = "zuroar_error_unsupported")
@@ -201,7 +201,7 @@ test_that("the data pointer is refused from C and from base R", {
 
 test_that("the data pointer is refused with a message naming as.double()", {
   expect_snapshot(error = TRUE, {
-    .Call(zro_test_dataptr, roar(1))
+    test_dataptr(roar(1))
     roar(c(2, 4))[3]
   })
 })

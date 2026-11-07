@@ -20,6 +20,8 @@ SEXP zro_to_double(SEXP a0);
 SEXP zro_to_integer(SEXP a0);
 SEXP zro_head_values(SEXP a0, SEXP a1);
 
+/* zro_altrep.c */
+SEXP zro_sum(SEXP a0);
 /* zro_altrep.c, test hooks */
 SEXP zro_test_dataptr(SEXP a0);
 SEXP zro_test_state(SEXP a0);
