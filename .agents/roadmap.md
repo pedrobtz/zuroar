@@ -467,6 +467,14 @@ the default branch's code is fixed.
 
 **Design.** §11.
 
+*Work list 2026-11-07:* every run on the last feature merge (`4527ac4`)
+was green except gctorture at step 20, dispatched by hand because a push
+to `main` runs the quick step. It reached the job's 240-minute limit in
+`test-wide.R`, whose 64-bit truncation test cut a 2,949-byte fixture at
+every byte (3,187 expectations, about 3 s each under gctorture). That
+test now cuts every byte of the small fixtures, as design §8 says, and a
+bounded set of the large one; the job's limit goes to 330 minutes.
+
 ## Stage 10 — v0.1.0 readiness
 
 **Issue.** [#11](https://github.com/pedrobtz/zuroar/issues/11), sub-issue of
