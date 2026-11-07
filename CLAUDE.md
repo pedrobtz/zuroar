@@ -118,12 +118,11 @@ Grows as stages land; see `.agents/design.md` §4.
   builds `x[i]`; `Duplicate` is a copy-on-write copy; `Serialized_state`
   and `Unserialize` are the portable bytes. Three `zro_test_*` routines
   exist for the tests only.
-- `src/zro_bitmap.c`, `src/zro_bitmap.h`: the 32-bit bindings and the
-  bounded reader `zro_portable_read()`. Entry points allocate the result
-  shell first (`zro_shell()`), then build the bitmap, then
-  `zro_attach()` it, so no R allocation can leak one. `zro_get()` checks
-  the class and `zro_abort()` signals a classed condition through the
-  R-level `zro_abort()`.
+- `src/zro_bitmap.c`, `src/zro_bitmap.h`: the 32-bit bindings. Entry
+  points allocate the result shell first (`zro_shell()`), then build the
+  bitmap, then `zro_attach()` it, so no R allocation can leak one.
+  `zro_get()` checks the class and `zro_abort()` signals a classed
+  condition through the R-level `zro_abort()`.
 - `R/roar.R`, `R/methods.R`, `R/check.R`, `R/conditions.R`:
   constructors,
   [`roar_add()`](https://pedrobtz.github.io/zuroar/reference/roar_add.md)/[`roar_remove()`](https://pedrobtz.github.io/zuroar/reference/roar_add.md)/[`roar_contains()`](https://pedrobtz.github.io/zuroar/reference/roar_contains.md),
@@ -141,6 +140,17 @@ Grows as stages land; see `.agents/design.md` §4.
   `zro_subset()` reads runs longer than 64 positions as a range
   intersection, shorter ones through an iterator. The ALTREP
   `Extract_subset` serves only C callers that bypass dispatch.
+- `src/zro_portable.c`, `src/zro_portable.h`: `zro_portable_read()`, the
+  bounded reader (size check, safe deserialiser, validation), in plain C
+  so `tools/fuzz/harness.c` fuzzes exactly what the package runs. Both
+  [`roar_unserialize()`](https://pedrobtz.github.io/zuroar/reference/roar_serialize.md)
+  and the ALTREP `Unserialize` (a
+  [`readRDS()`](https://rdrr.io/r/base/readRDS.html)) use it.
+- `src/zro_serial.c`, `R/serial.R`:
+  [`roar_serialize()`](https://pedrobtz.github.io/zuroar/reference/roar_serialize.md),
+  [`roar_unserialize()`](https://pedrobtz.github.io/zuroar/reference/roar_serialize.md)
+  and
+  [`roar_serial_config()`](https://pedrobtz.github.io/zuroar/reference/roar_serial_config.md).
 - `src/zro_info.c`, `R/info.R`:
   [`zuroar_info()`](https://pedrobtz.github.io/zuroar/reference/zuroar_info.md).
 - `src/zro_selftest.c`: an unexported oracle hook,
@@ -195,8 +205,9 @@ one when a stage establishes it.
   `zuroar64` stays an external pointer, and **every entry point checks
   it for null**, which is what it becomes after
   [`readRDS()`](https://rdrr.io/r/base/readRDS.html), erroring with
-  `zuroar_error_pointer` naming `roar_serialize()` (D5). Skipping the
-  check is a segfault.
+  `zuroar_error_pointer` naming
+  [`roar_serialize()`](https://pedrobtz.github.io/zuroar/reference/roar_serialize.md)
+  (D5). Skipping the check is a segfault.
 - **R conventions at the boundary:** ranges are inclusive and become
   CRoaring’s half-open `[min, max)`;
   [`roar_select()`](https://pedrobtz.github.io/zuroar/reference/roar_rank.md)
@@ -213,6 +224,12 @@ one when a stage establishes it.
   shift out of the domain), the result is an error, not a conversion to
   a plain vector or a dropped value (D11, D12).
 - **No `Imports`.** A runtime dependency needs a design decision first.
+- **CRoaring ignores the offset header** when reading portable bytes; a
+  corrupted offset reads the right set, not an error (design §8).
+- **Comments must not name the unsafe deserialiser with parentheses.**
+  `build-variants` greps first-party `src/` for
+  `roaring(64)?_bitmap_portable_deserialize(` and fails on any match,
+  comments included.
 - **[`format()`](https://rdrr.io/r/base/format.html),
   [`print()`](https://rdrr.io/r/base/print.html) and `type_sum()` never
   signal.** R, testthat and rlang format objects while handling a
@@ -268,6 +285,17 @@ one when a stage establishes it.
 - **[`length()`](https://rdrr.io/r/base/length.html) is an integer when
   it fits.** R’s dispatch converts a method’s double; compare with
   `length(oracle(v))`, not a double.
+- **Interoperability fixtures** in `tests/testthat/fixtures/` are
+  written by pyroaring 1.2.0 and Java RoaringBitmap 1.3.0 from
+  `sets.txt` with `tools/fixtures/make-fixtures` (needs uv and a JDK);
+  the `fixtures` workflow regenerates them and fails on any byte
+  difference. Both writers produce identical bytes. pyroaring’s
+  [`update()`](https://rdrr.io/r/stats/update.html) hangs on a stepped
+  `range`; pass a list.
+- **The `mirai` tests need the installed package** (the daemon is a
+  fresh R process), so they skip under `devtools::test()` and run under
+  `R CMD check`. With a serial configuration they need mirai’s default
+  dispatcher: `dispatcher = FALSE` does not apply it.
 - **Keep the suite inside the CRAN time budget.** It runs in seconds.
 
 ## Definition of done
@@ -324,13 +352,15 @@ instead of writing bespoke ones, and pin a released tag rather than
 to a commit, with the tag in a comment. The `R-CMD-check` workflow must
 call `r-cmd-check.yml`, because a hand-rolled one does not count as the
 pre-submission check. This package calls `r-cmd-check.yml@v1`;
-`coverage.yml` and `vendor-upstream.yml` (write tokens) pinned to the
-`v1` commit; `native-checks.yaml` (sanitizers, valgrind, LTO, rchk,
-analyzers, cran-special), `gctorture.yaml` and `vendor.yaml` at `@v1`.
-`build-variants.yaml` is the package’s own development-only job (design
-§7.4): it builds the default, no-AVX-512 and scalar variants, runs
-`tools/check-symbols` and the tests on each. `pkgdown.yaml` is the r-lib
-example workflow.
+`coverage.yml`, `vendor-upstream.yml` and `report.yml` (write tokens)
+pinned to the `v1` commit; `fuzz.yaml` (libFuzzer over
+`zro_portable_read()`, seeded by the fixtures) and `fixtures.yaml`
+(development only); `native-checks.yaml` (sanitizers, valgrind, LTO,
+rchk, analyzers, cran-special), `gctorture.yaml` and `vendor.yaml` at
+`@v1`. `build-variants.yaml` is the package’s own development-only job
+(design §7.4): it builds the default, no-AVX-512 and scalar variants,
+runs `tools/check-symbols` and the tests on each. `pkgdown.yaml` is the
+r-lib example workflow.
 
 Small edits get a small run. The shared workflows look at the files a
 pull request changes, compared with its merge base:

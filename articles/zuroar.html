@@ -134,14 +134,14 @@ similarities need no intermediate bitmap.</p>
 <div class="section level2">
 <h2 id="save-and-share">Save and share<a class="anchor" aria-label="anchor" href="#save-and-share"></a>
 </h2>
-<p><code>roar_serialize()</code> writes the portable format as a raw
-vector, and <code>roar_unserialize()</code> checks bytes before reading
+<p><code><a href="../reference/roar_serialize.html">roar_serialize()</a></code> writes the portable format as a raw
+vector, and <code><a href="../reference/roar_serialize.html">roar_unserialize()</a></code> checks bytes before reading
 them. A bitmap doesn’t survive <code><a href="https://rdrr.io/r/base/readRDS.html" class="external-link">saveRDS()</a></code> on its own;
-<code>roar_serial_config()</code> lets it travel to mirai workers.</p>
+<code><a href="../reference/roar_serial_config.html">roar_serial_config()</a></code> lets it travel to mirai workers.</p>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">b</span> <span class="op">&lt;-</span> <span class="fu">roar_serialize</span><span class="op">(</span><span class="va">x</span><span class="op">)</span></span>
-<span><span class="va">x2</span> <span class="op">&lt;-</span> <span class="fu">roar_unserialize</span><span class="op">(</span><span class="va">b</span><span class="op">)</span></span>
-<span><span class="fu">mirai</span><span class="fu">::</span><span class="fu"><a href="https://mirai.r-lib.org/reference/daemons.html" class="external-link">daemons</a></span><span class="op">(</span><span class="fl">2</span>, serial <span class="op">=</span> <span class="fu">roar_serial_config</span><span class="op">(</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
+<code class="sourceCode R"><span><span class="va">b</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/roar_serialize.html">roar_serialize</a></span><span class="op">(</span><span class="va">x</span><span class="op">)</span></span>
+<span><span class="va">x2</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/roar_serialize.html">roar_unserialize</a></span><span class="op">(</span><span class="va">b</span><span class="op">)</span></span>
+<span><span class="fu">mirai</span><span class="fu">::</span><span class="fu"><a href="https://mirai.r-lib.org/reference/daemons.html" class="external-link">daemons</a></span><span class="op">(</span><span class="fl">2</span>, serial <span class="op">=</span> <span class="fu"><a href="../reference/roar_serial_config.html">roar_serial_config</a></span><span class="op">(</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="next">Next<a class="anchor" aria-label="anchor" href="#next"></a>

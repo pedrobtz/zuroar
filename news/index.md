@@ -93,3 +93,14 @@
   and
   [`roar_size()`](https://pedrobtz.github.io/zuroar/reference/roar_optimize.md)
   show and tune how a bitmap is stored.
+
+- [`roar_serialize()`](https://pedrobtz.github.io/zuroar/reference/roar_serialize.md)
+  and
+  [`roar_unserialize()`](https://pedrobtz.github.io/zuroar/reference/roar_serialize.md)
+  write and read the portable Roaring format shared with Java, Go, Rust
+  and Python. Reading treats the bytes as untrusted: bounded, validated,
+  and a `zuroar_error_format` on anything corrupt, including a corrupt
+  `.rds` file.
+  [`roar_serial_config()`](https://pedrobtz.github.io/zuroar/reference/roar_serial_config.md)
+  configures `mirai` daemons for the 64-bit class to come; 32-bit
+  bitmaps need no configuration.

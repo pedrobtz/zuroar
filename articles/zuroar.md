@@ -92,10 +92,13 @@ roar_jaccard(x, y)
 
 ## Save and share
 
-`roar_serialize()` writes the portable format as a raw vector, and
-`roar_unserialize()` checks bytes before reading them. A bitmap doesn’t
-survive [`saveRDS()`](https://rdrr.io/r/base/readRDS.html) on its own;
-`roar_serial_config()` lets it travel to mirai workers.
+[`roar_serialize()`](https://pedrobtz.github.io/zuroar/reference/roar_serialize.md)
+writes the portable format as a raw vector, and
+[`roar_unserialize()`](https://pedrobtz.github.io/zuroar/reference/roar_serialize.md)
+checks bytes before reading them. A bitmap doesn’t survive
+[`saveRDS()`](https://rdrr.io/r/base/readRDS.html) on its own;
+[`roar_serial_config()`](https://pedrobtz.github.io/zuroar/reference/roar_serial_config.md)
+lets it travel to mirai workers.
 
 ``` r
 

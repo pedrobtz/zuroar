@@ -53,6 +53,11 @@ library(zuroar)
   [`roar_count()`](https://pedrobtz.github.io/zuroar/reference/roar_rank.md)
   [`roar_contains_range()`](https://pedrobtz.github.io/zuroar/reference/roar_rank.md)
   : Ordered queries
+- [`roar_serial_config()`](https://pedrobtz.github.io/zuroar/reference/roar_serial_config.md)
+  : Send bitmaps to mirai workers
+- [`roar_serialize()`](https://pedrobtz.github.io/zuroar/reference/roar_serialize.md)
+  [`roar_unserialize()`](https://pedrobtz.github.io/zuroar/reference/roar_serialize.md)
+  : Serialise a bitmap
 - [`roar_shift()`](https://pedrobtz.github.io/zuroar/reference/roar_shift.md)
   : Shift every value
 - [`roar_union()`](https://pedrobtz.github.io/zuroar/reference/roar_union.md)
