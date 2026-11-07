@@ -11,9 +11,9 @@ test_that("a bitmap travels to a mirai daemon and back with no serial config", {
   ))
   skip_if_not(installed, "zuroar is not installed")
 
+  local_daemon_library()
   mirai::daemons(1)
   withr::defer(mirai::daemons(0))
-  use_this_library()
   x <- roar(c(1, 7, 100000))
   m <- mirai::mirai(zuroar::roar_add(x, 8), x = x)
   y <- mirai::call_mirai(m)$data
@@ -33,9 +33,9 @@ test_that("a bitmap travels to a mirai daemon with roar_serial_config() set", {
 
   # The default dispatcher: with dispatcher = FALSE the serial
   # configuration is not applied.
+  local_daemon_library()
   mirai::daemons(1, serial = roar_serial_config())
   withr::defer(mirai::daemons(0))
-  use_this_library()
   x <- roar(c(1, 5, 9, 4294967295))
   m <- mirai::mirai(zuroar::roar_add(x, 7), x = x)
   y <- mirai::call_mirai(m)$data
