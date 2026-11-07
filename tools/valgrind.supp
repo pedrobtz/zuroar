@@ -17,3 +17,21 @@
    fun:pthread_create*
    obj:*/cli/libs/cli.so
 }
+
+# nanonext, which mirai loads for the daemon round-trip test
+# (test-mirai.R), starts its I/O threads when its shared object loads.
+# Their TLS blocks, allocated inside pthread_create(), are still owned by
+# the live threads when R exits, so memcheck reports them as "possibly
+# lost". Scoped like the cli entry: only possible leaks whose stack passes
+# through pthread_create from nanonext.so.
+{
+   nanonext-io-thread-tls
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:calloc
+   ...
+   fun:_dl_allocate_tls
+   ...
+   fun:pthread_create*
+   obj:*/nanonext/libs/nanonext.so
+}

@@ -8,11 +8,13 @@
 #'   negative or fractional number, or one above 2^32 - 1; or an output
 #'   type that cannot hold a value, such as `as.integer()` on a bitmap
 #'   holding a value above `.Machine$integer.max`.
-#' * `zuroar_error_pointer`: a bitmap whose pointer is null. A bitmap is
-#'   an external pointer, so it does not survive [saveRDS()] and
-#'   [readRDS()] or a trip to another process.
+#' * `zuroar_error_index`: a position outside `seq_len(length(x))`, or
+#'   `NA`, in `x[i]`.
 #' * `zuroar_error_unsupported`: an operation a set does not define, such
-#'   as `sum()` of a bitmap.
+#'   as `x > 5`, or one that would need the values as a plain vector, such
+#'   as `x[1] <- 5` or `identical(x, y)`.
+#' * `zuroar_error_format`: bytes that are not a valid portable Roaring
+#'   bitmap, for example a corrupt `.rds` file.
 #' * `zuroar_error_memory`: CRoaring could not allocate memory.
 #'
 #' Match on the class, not on the message, which may change.

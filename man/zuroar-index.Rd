@@ -69,9 +69,9 @@ holds no \code{NA}.
 its vectorised form. \code{head()} and \code{tail()} return bitmaps and follow
 R's rules for a negative \code{n}. \code{sort()} and \code{unique()} return \code{x}.
 
-\code{v \%in\% x} and \code{match(v, x)} are errors from R itself, which accepts
-only vectors there: use \code{\link[=roar_contains]{roar_contains()}} for membership and
-\code{\link[=roar_rank]{roar_rank()}} for positions, or \code{v \%in\% as.double(x)}.
+\code{v \%in\% x} and \code{match(v, x)} work, visiting every value of \code{x};
+\code{\link[=roar_contains]{roar_contains()}} and \code{\link[=roar_rank]{roar_rank()}} answer the same questions without
+visiting the set.
 
 Some vector operations have no meaning for a set and are
 \code{zuroar_error_unsupported} errors: \code{x[i] <- v} and \code{x[[k]] <- v} (use

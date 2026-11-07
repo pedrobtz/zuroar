@@ -2,7 +2,8 @@
  * input and copies it into a uint32_t buffer, calls CRoaring, then copies
  * the result out. No R API is called while CRoaring runs, so an R error
  * cannot long-jump through CRoaring's stack, and every bitmap is attached
- * to an external pointer (or freed) before anything can signal. */
+ * to its zuroar object (or freed) before anything can signal. The object
+ * itself, an ALTREP vector, lives in zro_altrep.c. */
 #include "zro_bitmap.h"
 
 #include <math.h>
@@ -31,53 +32,28 @@ NORET void zro_abort(const char *cls, const char *fmt, ...) {
   Rf_error("%s", msg); /* not reached: zro_abort() always signals */
 }
 
-/* --- External pointers -------------------------------------------------- */
+/* --- Portable bytes ----------------------------------------------------- */
 
-static void zro_finalize(SEXP ptr) {
-  roaring_bitmap_t *r = (roaring_bitmap_t *)R_ExternalPtrAddr(ptr);
-  if (r != NULL) {
+roaring_bitmap_t *zro_portable_read(const unsigned char *buf, size_t len,
+                                    size_t *used, const char **reason) {
+  *used = 0;
+  size_t need = roaring_bitmap_portable_deserialize_size((const char *)buf, len);
+  if (need == 0) {
+    *reason = "the header is not a Roaring bitmap's, or the bytes are truncated";
+    return NULL;
+  }
+  roaring_bitmap_t *r =
+      roaring_bitmap_portable_deserialize_safe((const char *)buf, need);
+  if (r == NULL) {
+    *reason = "the bytes could not be read as containers";
+    return NULL;
+  }
+  if (!roaring_bitmap_internal_validate(r, reason)) {
     roaring_bitmap_free(r);
-    R_ClearExternalPtr(ptr);
+    return NULL;
   }
-}
-
-SEXP zro_shell(void) {
-  SEXP ptr = PROTECT(R_MakeExternalPtr(NULL, R_NilValue, R_NilValue));
-  R_RegisterCFinalizerEx(ptr, zro_finalize, TRUE);
-  SEXP cls = PROTECT(Rf_mkString("zuroar"));
-  Rf_setAttrib(ptr, R_ClassSymbol, cls);
-  UNPROTECT(2);
-  return ptr;
-}
-
-void zro_attach(SEXP shell, roaring_bitmap_t *r) {
-  if (r == NULL) {
-    zro_abort("zuroar_error_memory", "CRoaring could not allocate memory.");
-  }
-  roaring_bitmap_set_copy_on_write(r, true);
-  R_SetExternalPtrAddr(shell, r);
-}
-
-const roaring_bitmap_t *zro_get(SEXP x) {
-  if (TYPEOF(x) != EXTPTRSXP || !Rf_inherits(x, "zuroar")) {
-    zro_abort("zuroar_error", "Expected a zuroar bitmap.");
-  }
-  const roaring_bitmap_t *r = (const roaring_bitmap_t *)R_ExternalPtrAddr(x);
-  if (r == NULL) {
-    zro_abort("zuroar_error_pointer",
-              "This bitmap's pointer is null. A bitmap does not survive "
-              "saveRDS(), readRDS() or a trip to a worker process; save it "
-              "with roar_serialize() and read it back with "
-              "roar_unserialize().");
-  }
+  *used = need;
   return r;
-}
-
-/* Whether `x` is a zuroar bitmap whose pointer is null. Never signals, so
- * format() and print() can describe a dead bitmap instead of failing. */
-SEXP zro_is_null(SEXP x) {
-  return Rf_ScalarLogical(TYPEOF(x) == EXTPTRSXP &&
-                          R_ExternalPtrAddr(x) == NULL);
 }
 
 /* --- Values ------------------------------------------------------------- */

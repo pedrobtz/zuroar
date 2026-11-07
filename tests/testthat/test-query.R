@@ -39,7 +39,6 @@ test_that("an empty bitmap has no minimum or maximum", {
 
 test_that("other Summary members are unsupported", {
   x <- roar(1:3)
-  expect_error(sum(x), class = "zuroar_error_unsupported")
   expect_error(prod(x), class = "zuroar_error_unsupported")
   expect_error(any(x), class = "zuroar_error_unsupported")
   expect_error(min(x, roar(0)), class = "zuroar_error_unsupported")

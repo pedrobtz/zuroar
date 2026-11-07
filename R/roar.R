@@ -94,8 +94,9 @@ change <- function(x, values, from, to, add, no_values) {
 
 #' Test membership
 #'
-#' `roar_contains()` tells, for each of `values`, whether `x` holds it:
-#' the bitmap form of `values %in% x`, which R accepts only for vectors.
+#' `roar_contains()` tells, for each of `values`, whether `x` holds it.
+#' It is the fast form of `values %in% x`, which works too but visits
+#' every value of `x`.
 #'
 #' @inheritParams roar_add
 #' @param values Whole numbers from 0 to 2^32 - 1.

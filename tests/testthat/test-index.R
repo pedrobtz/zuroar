@@ -68,14 +68,6 @@ test_that("sort() and unique() return the set", {
   expect_true(unique(x) == x)
 })
 
-test_that("match() and %in% need a vector, so they point to as.double()", {
-  # Base R's match() rejects an external pointer before it consults
-  # mtfrm(); roar_contains() and roar_rank() are the bitmap forms.
-  x <- roar(c(1, 5))
-  expect_error(5 %in% x)
-  expect_identical(5 %in% as.double(x), TRUE)
-})
-
 test_that("vector operations a set does not define are errors", {
   x <- roar(1:3)
   expect_error(rev(x), class = "zuroar_error_unsupported")

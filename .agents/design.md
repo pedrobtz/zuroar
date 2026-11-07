@@ -9,6 +9,12 @@ a sorted vector (§6.6, D11); shifting, next and previous values, range
 editing, strict subset, disjointness and `mirai` support join the API
 (§5, §5.1); Q1 and Q3 are settled (§12).
 
+Amended 2026-11-06 after Stage 4 found that `match()` rejects an external
+pointer: the 32-bit class becomes an ALTREP double vector carrying the
+CRoaring bitmap (§4, D17, §14), so `saveRDS()`, `%in%` and data-frame
+columns work; `zuroar64` stays an external pointer. D5 and Q1 are
+revised.
+
 - **Status:** Proposed. Merging this file adopts the design as the starting
   point for the package's own `.agents/design.md`; each decision in section
   10 stays the maintainer's until the package repository records it. A
@@ -157,16 +163,47 @@ the same `roaring_bitmap_*` names in one session.
    result out. No R API is called inside a CRoaring call, so an R error
    cannot long-jump through CRoaring's stack.
 
-A bitmap is an external pointer to a `roaring_bitmap_t` (or
-`roaring64_bitmap_t`) with a finaliser and class `zuroar` (or
-`zuroar64`). Every operation returns a new pointer and none modifies its
-argument (D4). Copy-on-write is enabled on every 32-bit bitmap through
+A **`zuroar`** is an ALTREP double vector (D17, amended 2026-11-06;
+§14 has the analysis). Its `data1` is an external pointer to a
+`roaring_bitmap_t` with a finaliser; its length is the cardinality; the
+class attribute `zuroar` carries the S3 methods of §6.3 and §6.6. The
+ALTREP methods read through CRoaring and never expand the set:
+
+- `Length`, `Elt` and `Get_region` answer from the bitmap (`Elt` by
+  `roaring_bitmap_select()`, regions by an iterator), so `x[[k]]`,
+  `sum()`, `print()` and `match()` work without a data pointer.
+- `Dataptr` and `Dataptr_or_null` refuse: the first signals
+  `zuroar_error_unsupported`, the second returns `NULL`. Any base or
+  third-party C that insists on a pointer (`REAL(x)`) gets an error,
+  never an 8 GiB vector (D11). `Dataptr(writeable = TRUE)` refusing is
+  also what keeps a bitmap immutable (D4).
+- `Serialized_state` writes the portable bytes on demand and
+  `Unserialize` reads them back through the bounded path (D8), so
+  `saveRDS()`, `serialize()`, `parallel` and `mirai` round-trip a bitmap
+  with no hook and no bytes kept at rest.
+- `Is_sorted` reports increasing and `No_NA` true, so `sort()` and
+  `anyNA()` are free.
+- `Extract_subset` returns a bitmap for a positional index, as §6.6
+  specifies for `[`.
+- `Duplicate` returns a new ALTREP object sharing containers through
+  copy-on-write; `Inspect` prints the cardinality and container kinds.
+
+Every operation returns a new bitmap and none modifies its argument
+(D4). Copy-on-write is enabled on every 32-bit bitmap through
 `roaring_bitmap_set_copy_on_write()`, so `roar_add()` on a large bitmap
-shares the containers it does not touch. CRoaring 5.4.0's `roaring64`
-has no copy-on-write, so every change to a `zuroar64` copies the whole
-bitmap (D16). A bitmap back from `readRDS()`
-or a `mirai` worker without the hook of §6.4 has a null pointer; every
-entry point detects it and the error names `roar_serialize()` (D5).
+shares the containers it does not touch.
+
+A **`zuroar64`** is an external pointer to a `roaring64_bitmap_t` with a
+finaliser and class `zuroar64`: R has no exact 64-bit vector type, so the
+ALTREP route is closed to it (§14). CRoaring 5.4.0's `roaring64` has no
+copy-on-write, so every change to a `zuroar64` copies the whole bitmap
+(D16). A `zuroar64` back from `readRDS()` or a `mirai` worker without the
+hook of §6.4 has a null pointer; every entry point detects it and the
+error names `roar_serialize()` and `roar64_unserialize()` (D5).
+
+Both classes keep the same binding discipline: C entry points reach the
+bitmap through `zro_get()` (the `data1` pointer or the external pointer),
+and no R API runs while CRoaring runs.
 
 ## 5. Public R API (v0.1.0 shape)
 
@@ -187,7 +224,7 @@ x[[2]]                                   # 7: one plain number
 head(y, 3); tail(y, 3)                   # bitmaps
 c(x, roar(42L))                          # union
 x + 10; x - 1                            # shifted bitmaps
-roar_contains(x, 6)                      # %in% is an error for a bitmap (§6.6)
+6 %in% x                                 # correct, but visits every value (§6.6)
 
 # queries
 min(x); max(x); range(x)
@@ -218,11 +255,12 @@ cfg <- roar_serial_config()              # for mirai::daemons(serial = cfg)
 ```
 
 `print()` and `format()` show the class, cardinality, range and first
-values. *Settled 2026-11-06 (Stage 4):* `roar_values(x, from, n)` has no
+values. *Settled 2026-11-06 (Stage 5):* `roar_values(x, from, n)` has no
 default for `n`, since bounded extraction is its point; `n = Inf` asks
 for every value. `roar_size(x)` is the size of the portable serialised
 form in bytes, exact and comparable across implementations;
-`roar_stats(x)` gives the in-memory bytes per container kind. `[<-`, `rev()` and `!` are errors (§6.3, §6.6).
+`roar_stats(x)` gives the in-memory bytes per container kind. `[<-`,
+`rev()` and `!` are errors (§6.3, §6.6).
 
 ### 5.1 Against pyroaring
 
@@ -239,7 +277,7 @@ has an R form here or is left out for a stated reason.
 | `add`, `update`, `discard`, `remove`, `add_checked` | `roar_add()`, `roar_remove()`, returning a new bitmap |
 | `add_range`, `remove_range` (half-open) | `roar_add(from =, to =)`, `roar_remove(from =, to =)` (inclusive) |
 | `clear`, `pop`, `overwrite`, `*_update`, `flip_inplace` | none: they only make sense in place |
-| `v in bm` | `roar_contains(x, v)`; `v %in% x` is an error, since `match()` takes only vectors (§6.6) |
+| `v in bm` | `roar_contains(x, v)`; `v %in% x` also works, visiting every value (§6.6) |
 | `contains_range`, `range_cardinality` | `roar_contains_range()`, `roar_count()` |
 | `len(bm)`, `bool(bm)` | `length(x)`, `length(x) > 0` |
 | `min`, `max` | `min()`, `max()`, `range()` |
@@ -353,14 +391,20 @@ The frozen format is not exposed: `roaring.h` documents it as
 endian-sensitive, and `roaring_bitmap_frozen_view()` borrows a buffer
 whose alignment an R raw vector does not promise.
 
-`saveRDS()` keeps the D5 behaviour: the bitmap comes back with a null
-pointer and a clear error. `mirai` is supported without that cost.
+A `zuroar` survives `saveRDS()`, `serialize()` and any process boundary
+on its own (D17, 2026-11-06): its ALTREP `Serialized_state` method
+writes the portable bytes only when something serialises it, and
+`Unserialize` reads them back through the bounded path. `roar_serialize()`
+stays the explicit, interoperable form. A `zuroar64` keeps the D5
+behaviour: it comes back from `saveRDS()` with a null pointer and a clear
+error. `mirai` is supported for it without that cost.
 `roar_serial_config()` returns
 `mirai::serial_config(c("zuroar", "zuroar64"), ...)` with
 `roar_serialize()` as both serialisers and `roar_unserialize()` and
 `roar64_unserialize()` as the matching readers; passed to
-`mirai::daemons(serial = )`, it ships bitmaps to and from workers through
-R's `refhook` mechanism, serialising only what is sent. `mirai`
+`mirai::daemons(serial = )`, it ships 64-bit bitmaps to and from workers
+through R's `refhook` mechanism, serialising only what is sent (the
+32-bit entry is harmless and kept for symmetry). `mirai`
 (>= 2.3.0, the first release whose `serial_config()` takes several
 classes) joins `Suggests`, and
 the function errors with `zuroar_error` naming `mirai` when it is not
@@ -371,7 +415,8 @@ installed.
 Conditions inherit from `zuroar_error`: `zuroar_error_value` for input
 outside the domain; `zuroar_error_format` for bytes that fail the length
 check, the safe deserialiser or validation, with CRoaring's reason
-string; `zuroar_error_pointer` for a null pointer after `readRDS()`;
+string; `zuroar_error_pointer` for a `zuroar64` whose pointer did not
+survive `readRDS()` (a `zuroar` cannot have one, D17);
 `zuroar_error_index` for a position outside `seq_len(length(x))`;
 `zuroar_error_unsupported` for an operation the class does not define
 (`[<-`, `rev()`, `!`, `x > 5`); and `zuroar_error_memory` when CRoaring
@@ -390,15 +435,19 @@ kept compressed (D11). Positions count from 1 and are doubles, since a
   (Stage 2):* on an empty bitmap they are a `zuroar_error_value` rather
   than base R's `Inf` with a warning, which would put a value outside
   the domain in the result (D2). They take one bitmap; `min(x, y)` is a
-  `zuroar_error_unsupported` pointing to `c()`, as are `sum()`, `prod()`,
-  `any()` and `all()`.
+  `zuroar_error_unsupported` pointing to `c()`, as are `prod()`, `any()`
+  and `all()`. *Amended 2026-11-06 (Stage 4):* `sum(x)` works, through
+  the ALTREP `Sum` method, which adds each run of consecutive values as
+  an arithmetic series; it was unsupported while a bitmap was a pointer.
 - **`format()` and `print()`** never fail. *Settled 2026-11-06 (Stage
   2):* a null-pointer bitmap prints as one, because R, testthat and rlang
   format objects while handling a condition. For the same reason the
   package registers `pillar::type_sum()` for the class (lazily; `pillar`
   joins `Suggests`): rlang's backtraces describe every object in a call
   through it, and its default calls `length()`, which on a null pointer
-  would signal again inside the handler.
+  would signal again inside the handler. Under D17 only a `zuroar64` can
+  have a null pointer; both guards stay for it. `format()` returns the
+  one-line description `print()` shows, not one string per value (Q6).
 - **`x[i]`** returns a bitmap of the values at positions `i`, as `[`
   keeps the class of a `Date`. Positive positions select, negative ones
   exclude, as in R; mixing signs, `NA` or a position past the end is a
@@ -418,23 +467,33 @@ kept compressed (D11). Positions count from 1 and are doubles, since a
 - **`sort(x)` and `unique(x)`** return `x`; `sort(x, decreasing = TRUE)`
   is an error, as is `rev(x)`: a set has no reversed form, and
   `rev(as.double(x))` is one call away.
-- **`v %in% x` and `match(v, x)`** are errors. *Amended 2026-11-06
-  (Stage 4):* the RFC planned an `mtfrm()` method for them, but base R's
-  `match()` rejects any non-vector before it consults `mtfrm()`, and a
-  bitmap is an external pointer (§4, D5). The documentation points to
-  `roar_contains()` and `roar_rank()`, or `v %in% as.double(x)`; no
-  `mtfrm()` method is defined, since it could never be reached.
+- **`v %in% x` and `match(v, x)`** work for a `zuroar` because it is a
+  vector (D17): R hashes every value through `Elt`, so they are correct
+  and cost one pass over the set, about 0.7 s per million values (§14).
+  No `mtfrm()` method is needed. The documentation points to
+  `roar_contains()` and `roar_rank()`, which do not visit the set. For a
+  `zuroar64`, an external pointer, they are R's own error: base R's
+  `match()` rejects a non-vector before it consults `mtfrm()` (found
+  2026-11-06), so the RFC's `mtfrm()` plan could never have worked there.
 - **Positions** follow R where the design is silent (settled 2026-11-06,
-  Stage 4): fractional positions truncate toward zero, zeros are dropped,
+  Stage 5): fractional positions truncate toward zero, zeros are dropped,
   and a logical index longer than `x` is a `zuroar_error_index` (R would
-  give `NA`). `x[]` returns `x`.
+  give `NA`). `x[]` returns `x`. `x[i]` is an S3 method that resolves the
+  index in R and reads runs of positions through CRoaring; the ALTREP
+  `Extract_subset` of §4 serves C code that subsets without dispatch.
 - **`[<-` and `[[<-`** are errors: assigning by position has no meaning
   for a set; `roar_add()` and `roar_remove()` change it.
+- **`identical(x, y)`** is a `zuroar_error_unsupported`, not a value
+  (found 2026-11-06, Stage 4): R compares the two data pointers, on every
+  R version, and D17 refuses them. `x == y` is the set equality; the
+  documentation says so, and tests use it in place of
+  `expect_identical()`.
 
-R gives no hook for `for (v in x)`, `lapply(x, f)` or `union()`,
-`intersect()` and `setdiff()`, which are not generic. A `for` loop over
-a bitmap is an error from R itself; the documentation says to iterate
-over `as.double(x)`.
+`for (v in x)`, `lapply(x, f)` and `vapply()` iterate the values one at a
+time through the ALTREP `Elt` method (D17), so they are correct and cost
+one pass. `union()`, `intersect()` and `setdiff()` are not generic and
+expand through `as.double()`; the set operators of §6.3 are the
+compressed forms.
 
 ## 7. Building the vendored C
 
@@ -556,8 +615,8 @@ wrapper unit, so the file that includes `roaring.c` holds nothing else.
   above `v`.
 - **Sorted-vector oracle.** For generated `v` and `s <- sort(unique(v))`:
   `as.double(roar(v)[i])` equals `s[i]` for positive, negative and
-  logical `i`; `x[[k]]`, `head()`, `tail()` and `c()` agree with the
-  same calls on `s` (`match()` dropped 2026-11-06, §6.6).
+  logical `i`; `x[[k]]`, `head()`, `tail()`, `c()` and `match()` agree
+  with the same calls on `s`.
 - **Counts.** A `zuroar64` holding more than 2^53 values errors in
   `length()` and gives the right text from `roar64_length()`, including
   the full 2^64 range.
@@ -570,8 +629,12 @@ wrapper unit, so the file that includes `roaring.c` holds nothing else.
   corrupted cookies, container counts, offsets and run lengths: each is a
   `zuroar_error_format`, none crashes under ASan and UBSan. A `libFuzzer`
   target over the deserialising entry point runs in development.
-- **Lifetimes.** Collection of shared copy-on-write containers and null
-  pointers after `readRDS()`.
+- **Lifetimes.** Collection of shared copy-on-write containers, null
+  pointers after `readRDS()` of a `zuroar64`, and the ALTREP methods of
+  §4 under gctorture: `Elt` and `Get_region` on every container kind,
+  `Duplicate` sharing, `Serialized_state` and `Unserialize` round trips,
+  and `Dataptr` refusing from base functions (`as.double()`, `x + 1`,
+  `x[1] <- 5`) and from `REAL()` in a test-only C routine.
 - **Benchmarks** (article): base R and `bit` on union, intersection,
   membership and memory over dense, sparse and run-heavy sets. No
   speed-up is claimed before it is measured.
@@ -579,7 +642,9 @@ wrapper unit, so the file that includes `roaring.c` holds nothing else.
 ## 9. Roadmap
 
 The RFC's plan, superseded by `.agents/roadmap.md`, which splits Stage 7
-in three and makes Stage 2 `full`. Eight stages, numbered 0 to 7. Stages
+in three, makes Stage 2 `full`, and on 2026-11-06 inserts the ALTREP
+representation (D17) as its Stage 4 and appends a Review stage. Eight
+stages, numbered 0 to 7, in the RFC's numbering. Stages
 run the quick CI profile unless
 marked `full`. Each is one pull request, merged on green; nobody waits on
 the post-merge full run.
@@ -616,9 +681,11 @@ any of them.
   override and the first fallback if a CRAN flavour objects.
 - **D4 (C).** Value semantics: every function returns a new bitmap, made
   cheap by copy-on-write.
-- **D5 (C).** External pointers, explicit serialisation and a clear
-  error for a pointer that did not survive `saveRDS()`. `mirai` is
-  served by `roar_serial_config()` (§6.4). Settles Q1.
+- **D5 (C, narrowed 2026-11-06 by D17).** For `zuroar64`: an external
+  pointer, explicit serialisation and a clear error for a pointer that
+  did not survive `saveRDS()`; `mirai` is served by
+  `roar_serial_config()` (§6.4). Before D17 this covered both classes
+  and settled Q1.
 - **D6 (C).** R conventions at the boundary: inclusive ranges and
   1-based select.
 - **D7 (C).** No C API and no installed header in v0.1.0. No sibling has
@@ -632,8 +699,8 @@ any of them.
 - **D11 (C).** A bitmap behaves as a sorted vector without duplicates
   wherever R lets a method say so: positional `[` returning a bitmap,
   `[[`, `head()`, `tail()`, `c()` as union, `sort()`, `unique()`,
-  and `+` and `-` with a number as a shift (§6.3, §6.6; `mtfrm()` removed
-  2026-11-06, since `match()` never reaches it for a bitmap). Where
+  `%in%` and `match()` (through D17, not `mtfrm()`), and `+` and `-`
+  with a number as a shift (§6.3, §6.6). Where
   vector meaning and set meaning collide (`rev()`, `[<-`, `x > 5`), the
   operation is an error rather than a silent conversion.
 - **D12 (C).** Shifting a value out of the domain is an error unless
@@ -647,6 +714,20 @@ any of them.
 - **D16 (C).** A change to a `zuroar64` copies the whole bitmap in
   v0.1.0, because `roaring64` has no copy-on-write; the documentation
   says so. Sharing containers would need upstream support.
+- **D17 (C, 2026-11-06).** A `zuroar` is an ALTREP double vector whose
+  `data1` holds the CRoaring bitmap, with a data pointer that refuses
+  (§4). Reasons, from the measurements in §14: `saveRDS()`,
+  `serialize()`, `parallel`, `mirai` and data-frame columns work with no
+  hook and no bytes kept at rest, which refutes Q1's memory objection;
+  `%in%` and `match()` behave as D11 promised; and a
+  refusing `Dataptr` makes every attempt by base or third-party C to
+  expand the set an error, which is D11's rule and stronger than an
+  external pointer gives. Costs accepted: about ten ALTREP methods under
+  gctorture and rchk, a 64-bit class that cannot follow because R has
+  no exact 64-bit vector, and `identical()` being an error rather than
+  the set equality (§6.6; corrected 2026-11-06 in Stage 4, which found
+  that it reads the data pointer). The alternative of a list wrapping the
+  pointer was rejected: it gains `%in%` and nothing else.
 
 ## 11. Acceptance criteria for v0.1.0
 
@@ -664,12 +745,13 @@ any of them.
 
 ## 12. Open questions
 
-- **Q1. Settled 2026-11-02 by D5.** Keeping the portable bytes beside
-  every bitmap would roughly double memory and serialise every result,
-  in a package whose point is compression. `mirai`, the case that
-  matters in practice, is served on demand by `roar_serial_config()`;
-  `saveRDS()` stays explicit. An ALTREP class with a serialisation
-  method is the route if this is reopened.
+- **Q1. Settled 2026-11-02 by D5, reopened and settled 2026-11-06 by
+  D17.** The first answer held that keeping the portable bytes beside
+  every bitmap would roughly double memory. An ALTREP `Serialized_state`
+  method runs only when something serialises the object (measured: 151
+  bytes written for a million values, nothing at rest), so the objection
+  did not apply to the ALTREP route it named. `zuroar` takes that route;
+  `zuroar64` keeps D5.
 - **Q2.** If `zutable`'s kernel needs bitmaps in C, should `zuroar`
   install a header and C table (R10.1), or `zutable` vendor its own copy
   with hidden symbols?
@@ -683,6 +765,13 @@ any of them.
   fallback should a CRAN flavour object later.
 - **Q5.** Is v0.1.0 a CRAN submission before a sibling uses it? The
   board's `CRAN intent` records it.
+- **Q6 (2026-11-06, Stage 4).** Should `format()` return one string per
+  value, as it does for a `Date`, so that a data frame holding a bitmap
+  column prints? Today it returns the one-line description that `print()`
+  shows (§6.6), and `print()` of such a data frame reports a corrupt
+  frame. An element-wise `format()` on a large bitmap would expand it, as
+  `as.double()` does explicitly. The data frame itself builds, subsets
+  and indexes correctly either way.
 
 ## 13. Sources and verification
 
@@ -695,9 +784,9 @@ Checked on 2 November 2026, for the amendment:
   uses `portable_deserialize_safe()` and `internal_validate()` as D8 does.
 - R 4.5.2: `union()`, `intersect()`, `setdiff()`, `is.element()`,
   `%in%` and `match()` do not dispatch; `[`, `head()`, `tail()`, `rev()`,
-  `sort()`, `unique()`, `format()` and `mtfrm()` do, but `match()`
-  calls `mtfrm()` only after accepting a vector, which an external
-  pointer is not (checked 2026-11-06).
+  `sort()`, `unique()`, `format()` and `mtfrm()` do, but `match()` calls
+  `mtfrm()` only after accepting a vector, which an external pointer is
+  not (checked 2026-11-06; §14).
 - `mirai` 2.7.3: `serial_config(class, sfunc, ufunc)`, built on R's
   `refhook`, passed to `daemons(serial = )`; its NEWS gives 2.3.0 as the
   release that accepts several classes.
@@ -728,3 +817,46 @@ the target regions. Stage 1 settles all three.
 
 [cr-readme]: https://github.com/RoaringBitmap/CRoaring/blob/master/README.md
 [cr-licence]: https://github.com/RoaringBitmap/CRoaring/blob/master/LICENSE
+
+## 14. Representation analysis (2026-11-06)
+
+Written when Stage 4 found that `match()` rejects an external pointer
+before it consults `mtfrm()`, so the `%in%` that §5 promised could not
+work. Three representations were prototyped on R 4.6 and run through the
+same base operations; the matrix decided D17.
+
+**Candidates.** A: an external pointer with a class attribute (the
+original D5). B: a length-one list wrapping that pointer, with `mtfrm()`.
+C: an ALTREP double vector with the pointer in `data1`, a `Dataptr` that
+refuses, `Elt`/`Get_region` through CRoaring, and ALTREP serialisation.
+
+| | A. External pointer | B. List wrapper | C. ALTREP vector |
+| --- | --- | --- | --- |
+| `%in%`, `match()` | R's own error | works via `mtfrm()`, expands `x` | works; R hashes every element: 0.7 s per 10^6 values, over 5 min for 10^9 |
+| `saveRDS()`, `serialize()`, `mirai`, `parallel` | null pointer; needs `roar_serialize()` and `roar_serial_config()` | same | round-trips natively; bytes written on demand (151 for 10^6 values) |
+| Silent expansion by C code | impossible | impossible | a choice: a refusing `Dataptr` makes `x + 1`, `x > 5`, `as.double(x)`, `x[1] <- 5` and `format(x)` errors; `sum()`, `print()`, `x[[k]]`, `head()` work region-wise |
+| `rev()`, `sort()`, `unique()` | S3 methods | S3 methods | base expands them unless the S3 methods stay; with the class attribute they do |
+| `lapply()`, `for` | no hook; `for` errors | `as.list()` hook | iterates elements, correct, one pass |
+| Data-frame column | no | no | yes |
+| `identical()`, `all.equal()` | compares addresses | compares addresses | an error: both read the data pointer (corrected 2026-11-06, Stage 4; the prototype's `identical()` returned early on a length mismatch) |
+| 64-bit class | same code | same code | no exact vector type: doubles stop at 2^53, `ALTSTRING` is exact but slow |
+| Immutability (D4) | guaranteed | guaranteed | guaranteed if `Dataptr(writeable)` refuses |
+| C surface under gctorture and rchk | one finalizer | one finalizer | about ten ALTREP methods more |
+
+**What the measurements changed.** Q1's memory objection did not apply
+to ALTREP, whose serialisation runs only on demand. `%in%` is one pass
+over the set in B and C alike, correct but not fast; `roar_contains()`
+stays the documented membership test. "Error, never silent" is
+achievable under ALTREP, and is stronger than A, where third-party C
+never sees a bitmap at all. ALTREP adds a layer under the S3 methods, not
+instead of them.
+
+**Decision.** C for `zuroar` (D17), A for `zuroar64`, B rejected. Done
+before v0.1.0 because the API is still free to change; after release a
+representation switch breaks every saved object.
+
+**Evidence.** A 60-line ALTREP prototype (`altbit`: `Length`, `Elt`,
+`Get_region`, refusing `Dataptr`, `Is_sorted`, `No_NA`,
+`Serialized_state`, `Unserialize`) and a classed list with `mtfrm()`,
+both exercised on 10^6 and 10^9 values; timings are from an x86-64
+laptop and matter only in ratio.

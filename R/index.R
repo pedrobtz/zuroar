@@ -13,9 +13,9 @@
 #' its vectorised form. `head()` and `tail()` return bitmaps and follow
 #' R's rules for a negative `n`. `sort()` and `unique()` return `x`.
 #'
-#' `v %in% x` and `match(v, x)` are errors from R itself, which accepts
-#' only vectors there: use [roar_contains()] for membership and
-#' [roar_rank()] for positions, or `v %in% as.double(x)`.
+#' `v %in% x` and `match(v, x)` work, visiting every value of `x`;
+#' [roar_contains()] and [roar_rank()] answer the same questions without
+#' visiting the set.
 #'
 #' Some vector operations have no meaning for a set and are
 #' `zuroar_error_unsupported` errors: `x[i] <- v` and `x[[k]] <- v` (use
