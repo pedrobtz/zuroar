@@ -32,7 +32,7 @@ methods and bindings reach the bitmap through `zro_get()`.
 | 1 | [Vendored CRoaring](#stage-1--vendored-croaring) | full | [#3](https://github.com/pedrobtz/zuroar/issues/3) | [#16](https://github.com/pedrobtz/zuroar/pull/16) | 2026-11-06 |
 | 2 | [The zuroar class](#stage-2--the-zuroar-class) | full | [#4](https://github.com/pedrobtz/zuroar/issues/4) | [#17](https://github.com/pedrobtz/zuroar/pull/17) | 2026-11-06 |
 | 3 | [Set algebra](#stage-3--set-algebra) | quick | [#5](https://github.com/pedrobtz/zuroar/issues/5) | [#18](https://github.com/pedrobtz/zuroar/pull/18) | 2026-11-06 |
-| 4 | [ALTREP representation](#stage-4--altrep-representation) | full | [#20](https://github.com/pedrobtz/zuroar/issues/20) | | |
+| 4 | [ALTREP representation](#stage-4--altrep-representation) | full | [#20](https://github.com/pedrobtz/zuroar/issues/20) | | 2026-11-06 |
 | 5 | [Rank, select and ranges](#stage-5--rank-select-and-ranges) | quick | [#6](https://github.com/pedrobtz/zuroar/issues/6) | | |
 | 6 | [Portable serialisation](#stage-6--portable-serialisation) | full | [#7](https://github.com/pedrobtz/zuroar/issues/7) | | |
 | 7 | [64-bit bitmaps](#stage-7--64-bit-bitmaps) | quick | [#8](https://github.com/pedrobtz/zuroar/issues/8) | | |
@@ -233,7 +233,9 @@ is an error. Nothing the user saw in Stages 2 and 3 changes except that
   to `zuroar64` in Stage 7. `format()` and `print()` keep working on any
   object the class can produce.
 - `Dataptr` refusing signals `zuroar_error_unsupported` with a message
-  naming `as.double()` and `roar_values()`.
+  naming `as.double()` and `roar_values()`. *2026-11-06:* the message
+  names `as.double()`, `head()` and `roar_contains()`; Stage 5 adds
+  `roar_values()` when it exists.
 - A test-only `.Call` that calls `REAL()` on a bitmap, to show the
   refusal from C; tests for `saveRDS()` and `serialize()` round trips,
   `identical()`, `%in%` and `match()` against the oracle, `data.frame(x)`,
@@ -249,15 +251,31 @@ is an error. Nothing the user saw in Stages 2 and 3 changes except that
   `mirai` daemon with no `serial` configuration.
 - `v %in% x` and `match(v, x)` match the oracle on the generated sets,
   and the Stage 2 and 3 suites pass unchanged.
-- `as.double(x)`, `x + 1`, `x > 5`, `x[1] <- 5` and the test-only
-  `REAL()` call are errors, and `sum(x)`, `print(x)`, `x[[k]]` and
-  `head(x)` succeed, on a bitmap whose expansion would exceed available
-  memory (`roar_range(0, 2^32 - 1)`).
-- `identical(x, roar_unserialize(roar_serialize(x)))` is `TRUE`.
+- `x + 1`, `x > 5`, `x[1] <- 5`, `unclass(x) + 1` and the test-only
+  `REAL()` call are errors, and `sum(x)`, `print(x)`, `x[[k]]`,
+  `head(x)`, `tail(x)` and `x[i]` succeed, on a bitmap whose expansion
+  would exceed available memory (`roar_range(0, 2^32 - 1)`). *Deviation
+  2026-11-06:* `as.double(x)` was dropped from the error list; it is the
+  explicit expansion (§6.6) and on that bitmap fails only when memory
+  runs out, which is R's error and depends on the machine.
+- `x == roar_unserialize(roar_serialize(x))` is `TRUE`. *Deviation
+  2026-11-06:* the criterion said `identical()`, which reads the data
+  pointer on every R version and so is a `zuroar_error_unsupported`
+  under D17 (design §6.6, §14); `==` is the set equality. Checked here
+  through `serialize()`, `saveRDS()` and the test hook, since
+  `roar_serialize()` is Stage 6's.
 - A full-profile r-actions run is green: gctorture at the sensitive step,
   valgrind and ASan over the new methods, rchk on `src/zro_altrep.c`.
 
 **Design.** §4, §6.4, §6.6, §8 (lifetimes), §14, D4, D11, D17.
+
+*Done 2026-11-06.* Also: `sum()` works through a `Sum` method (design
+§6.6 amended); `[` is a thin S3 method over `Extract_subset`, because
+base `[` drops the class attribute of its result; `as.data.frame()` is
+`as.data.frame.vector`; `rev()`, `sort(decreasing = TRUE)` and
+`unique()` keep their Stage 5 methods, so until then `rev(x)` is `x` and
+`unique(x)` a plain vector; a data frame with a bitmap column builds and
+subsets but does not print (design Q6).
 
 ## Stage 5 — Rank, select and ranges
 

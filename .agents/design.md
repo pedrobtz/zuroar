@@ -430,15 +430,19 @@ kept compressed (D11). Positions count from 1 and are doubles, since a
   (Stage 2):* on an empty bitmap they are a `zuroar_error_value` rather
   than base R's `Inf` with a warning, which would put a value outside
   the domain in the result (D2). They take one bitmap; `min(x, y)` is a
-  `zuroar_error_unsupported` pointing to `c()`, as are `sum()`, `prod()`,
-  `any()` and `all()`.
+  `zuroar_error_unsupported` pointing to `c()`, as are `prod()`, `any()`
+  and `all()`. *Amended 2026-11-06 (Stage 4):* `sum(x)` works, through
+  the ALTREP `Sum` method, which adds each run of consecutive values as
+  an arithmetic series; it was unsupported while a bitmap was a pointer.
 - **`format()` and `print()`** never fail. *Settled 2026-11-06 (Stage
   2):* a null-pointer bitmap prints as one, because R, testthat and rlang
   format objects while handling a condition. For the same reason the
   package registers `pillar::type_sum()` for the class (lazily; `pillar`
   joins `Suggests`): rlang's backtraces describe every object in a call
   through it, and its default calls `length()`, which on a null pointer
-  would signal again inside the handler.
+  would signal again inside the handler. Under D17 only a `zuroar64` can
+  have a null pointer; both guards stay for it. `format()` returns the
+  one-line description `print()` shows, not one string per value (Q6).
 - **`x[i]`** returns a bitmap of the values at positions `i`, as `[`
   keeps the class of a `Date`. Positive positions select, negative ones
   exclude, as in R; mixing signs, `NA` or a position past the end is a
@@ -468,11 +472,17 @@ kept compressed (D11). Positions count from 1 and are doubles, since a
   2026-11-06), so the RFC's `mtfrm()` plan could never have worked there.
 - **`[<-` and `[[<-`** are errors: assigning by position has no meaning
   for a set; `roar_add()` and `roar_remove()` change it.
+- **`identical(x, y)`** is a `zuroar_error_unsupported`, not a value
+  (found 2026-11-06, Stage 4): R compares the two data pointers, on every
+  R version, and D17 refuses them. `x == y` is the set equality; the
+  documentation says so, and tests use it in place of
+  `expect_identical()`.
 
-R gives no hook for `for (v in x)`, `lapply(x, f)` or `union()`,
-`intersect()` and `setdiff()`, which are not generic. A `for` loop over
-a bitmap is an error from R itself; the documentation says to iterate
-over `as.double(x)`.
+`for (v in x)`, `lapply(x, f)` and `vapply()` iterate the values one at a
+time through the ALTREP `Elt` method (D17), so they are correct and cost
+one pass. `union()`, `intersect()` and `setdiff()` are not generic and
+expand through `as.double()`; the set operators of §6.3 are the
+compressed forms.
 
 ## 7. Building the vendored C
 
@@ -698,13 +708,15 @@ any of them.
   (§4). Reasons, from the measurements in §14: `saveRDS()`,
   `serialize()`, `parallel`, `mirai` and data-frame columns work with no
   hook and no bytes kept at rest, which refutes Q1's memory objection;
-  `%in%`, `match()` and `identical()` behave as D11 promised; and a
+  `%in%` and `match()` behave as D11 promised; and a
   refusing `Dataptr` makes every attempt by base or third-party C to
   expand the set an error, which is D11's rule and stronger than an
   external pointer gives. Costs accepted: about ten ALTREP methods under
-  gctorture and rchk, and a 64-bit class that cannot follow because R has
-  no exact 64-bit vector. The alternative of a list wrapping the pointer
-  was rejected: it gains `%in%` and nothing else.
+  gctorture and rchk, a 64-bit class that cannot follow because R has
+  no exact 64-bit vector, and `identical()` being an error rather than
+  the set equality (§6.6; corrected 2026-11-06 in Stage 4, which found
+  that it reads the data pointer). The alternative of a list wrapping the
+  pointer was rejected: it gains `%in%` and nothing else.
 
 ## 11. Acceptance criteria for v0.1.0
 
@@ -742,6 +754,13 @@ any of them.
   fallback should a CRAN flavour object later.
 - **Q5.** Is v0.1.0 a CRAN submission before a sibling uses it? The
   board's `CRAN intent` records it.
+- **Q6 (2026-11-06, Stage 4).** Should `format()` return one string per
+  value, as it does for a `Date`, so that a data frame holding a bitmap
+  column prints? Today it returns the one-line description that `print()`
+  shows (§6.6), and `print()` of such a data frame reports a corrupt
+  frame. An element-wise `format()` on a large bitmap would expand it, as
+  `as.double()` does explicitly. The data frame itself builds, subsets
+  and indexes correctly either way.
 
 ## 13. Sources and verification
 
@@ -808,7 +827,7 @@ refuses, `Elt`/`Get_region` through CRoaring, and ALTREP serialisation.
 | `rev()`, `sort()`, `unique()` | S3 methods | S3 methods | base expands them unless the S3 methods stay; with the class attribute they do |
 | `lapply()`, `for` | no hook; `for` errors | `as.list()` hook | iterates elements, correct, one pass |
 | Data-frame column | no | no | yes |
-| `identical()`, `all.equal()` | compares addresses | compares addresses | compares values |
+| `identical()`, `all.equal()` | compares addresses | compares addresses | an error: both read the data pointer (corrected 2026-11-06, Stage 4; the prototype's `identical()` returned early on a length mismatch) |
 | 64-bit class | same code | same code | no exact vector type: doubles stop at 2^53, `ALTSTRING` is exact but slow |
 | Immutability (D4) | guaranteed | guaranteed | guaranteed if `Dataptr(writeable)` refuses |
 | C surface under gctorture and rchk | one finalizer | one finalizer | about ten ALTREP methods more |

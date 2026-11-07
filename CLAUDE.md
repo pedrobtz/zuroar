@@ -26,13 +26,13 @@ and Q5 are still open.
 
 ## Current state
 
-Scaffolded 2026-11-01 with `create-pkg.sh` (C, `use_c()`). Stages 0 to 3
-merged on 2026-11-06: identity, vendored CRoaring, the `zuroar` class and
-its set algebra. The roadmap was re-planned the same day for design D17:
-Stage 4 switches `zuroar` from an external pointer to an ALTREP vector,
-and the later stages, already written on the pointer in the `stage-*-wip`
-branches, rebase onto it. The roadmap in `.agents/roadmap.md` takes it
-to v0.1.0.
+Scaffolded 2026-11-01 with `create-pkg.sh` (C, `use_c()`). Stages 0 to 4
+merged on 2026-11-06: identity, vendored CRoaring, the `zuroar` class,
+its set algebra, and the switch from an external pointer to an ALTREP
+vector (design D17, re-planned the same day). The later stages, already
+written on the pointer in the `stage-*-wip` branches and pull request
+#19, rebase onto it. The roadmap in `.agents/roadmap.md` takes it to
+v0.1.0.
 
 ## Stage tracking
 
@@ -102,12 +102,21 @@ Grows as stages land; see `.agents/design.md` §4.
 - `src/zro_roaring.c`: the wrapper unit, the only includer of `roaring.c`.
 - `src/zro_init.c`, `src/zro_init.h`: routine registration and the
   `.Call` prototypes.
-- `src/zro_bitmap.c`, `src/zro_bitmap.h`: the 32-bit bindings. A bitmap
-  is an external pointer of class `zuroar` with a finaliser. Entry points
-  allocate the result shell first (`zro_shell()`), then build the
-  bitmap, then `zro_attach()` it, so no R allocation can leak one.
-  `zro_get()` is the null-pointer check, and `zro_abort()` signals a
-  classed condition through the R-level `zro_abort()`.
+- `src/zro_altrep.c`: the representation (D17). A `zuroar` is an ALTREP
+  double vector; its `data1` is an external pointer, with a finaliser, to
+  a `zro_bitmap_t` holding the CRoaring bitmap, its cached cardinality
+  and a read cursor. `zro_shell()`, `zro_attach()` and `zro_get()` live
+  here with the methods: `Length`, `Elt`, `Get_region` and `Sum` read
+  through CRoaring; `Dataptr` refuses; `Extract_subset` builds `x[i]`;
+  `Duplicate` is a copy-on-write copy; `Serialized_state` and
+  `Unserialize` are the portable bytes. Three `zro_test_*` routines exist
+  for the tests only.
+- `src/zro_bitmap.c`, `src/zro_bitmap.h`: the 32-bit bindings and the
+  bounded reader `zro_portable_read()`. Entry points allocate the result
+  shell first (`zro_shell()`), then build the bitmap, then `zro_attach()`
+  it, so no R allocation can leak one. `zro_get()` checks the class and
+  `zro_abort()` signals a classed condition through the R-level
+  `zro_abort()`.
 - `R/roar.R`, `R/methods.R`, `R/check.R`, `R/conditions.R`: constructors,
   `roar_add()`/`roar_remove()`/`roar_contains()`, the vector methods,
   type checks (the C side checks each value), and the condition helper.
@@ -144,7 +153,22 @@ when a stage establishes it.
   design §4, §14): it signals `zuroar_error_unsupported`, so no base or
   third-party C can expand the set, and `Dataptr_or_null` returns `NULL`.
   Its `Serialized_state` writes portable bytes and `Unserialize` reads
-  them through the bounded path, so `saveRDS()` works. A `zuroar64` stays
+  them through the bounded path, so `saveRDS()` works. Consequences to
+  keep in mind: `identical(x, y)` is that error (use `==`), and so is
+  `expect_identical()` on two bitmaps; base `[` drops the class of what
+  `Extract_subset` returns, so `[.zuroar` puts it back; `sum()` goes
+  through the `Sum` method, every other Summary member through
+  `Summary.zuroar`.
+- **An attached bitmap is never modified.** `zro_attach()` is the last
+  write; every binding builds a new bitmap (D4). The read cursor in
+  `zro_bitmap_t` holds a CRoaring iterator into the containers, and
+  copy-on-write copies wrap containers without moving them, so the cursor
+  stays valid for the bitmap's life. An in-place CRoaring call on an
+  attached bitmap would silently corrupt it.
+- **ALTREP methods allocate nothing they do not protect, and call no R
+  API while CRoaring runs.** `Get_region` and `Elt` allocate nothing;
+  `Extract_subset`, `Duplicate` and `Unserialize` follow the shell-then-
+  attach order; `Dataptr` may signal (R's own compact sequences do). A `zuroar64` stays
   an external pointer, and **every entry point checks it for null**,
   which is what it becomes after `readRDS()`, erroring with
   `zuroar_error_pointer` naming `roar_serialize()` (D5). Skipping the
@@ -165,9 +189,9 @@ when a stage establishes it.
 - **No `Imports`.** A runtime dependency needs a design decision first.
 - **`format()`, `print()` and `type_sum()` never signal.** R, testthat
   and rlang format objects while handling a condition; a second error
-  there escapes the handler. They describe a null pointer instead, and
-  the lazily registered `pillar::type_sum()` method keeps rlang's
-  backtraces from calling `length()` on one (design §6.6).
+  there escapes the handler. For a `zuroar64` they describe a null
+  pointer instead, and the lazily registered `pillar::type_sum()` method
+  keeps rlang's backtraces from calling `length()` on one (design §6.6).
 - **Allocate the shell before the bitmap.** `zro_shell()`, then the
   CRoaring call, then `zro_attach()`. `zro_abort()` only when every
   bitmap is attached or freed.
