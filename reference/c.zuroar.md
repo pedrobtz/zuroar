@@ -9,6 +9,9 @@ of its arguments: bitmaps and whole numbers alike, as
 ``` r
 # S3 method for class 'zuroar'
 c(...)
+
+# S3 method for class 'zuroar64'
+c(...)
 ```
 
 ## Arguments

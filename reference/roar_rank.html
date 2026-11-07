@@ -77,7 +77,8 @@ or at or below, each of <code>values</code>, and <code>NA</code> where there is 
 
 
 <dt id="arg-values">values<a class="anchor" aria-label="anchor" href="#arg-values"></a></dt>
-<dd><p>Whole numbers from 0 to 2^32 - 1.</p></dd>
+<dd><p>Whole numbers from 0 to 2^32 - 1; for a <code>zuroar64</code>,
+decimal text or doubles below 2^53.</p></dd>
 
 
 <dt id="arg-k">k<a class="anchor" aria-label="anchor" href="#arg-k"></a></dt>
@@ -92,7 +93,8 @@ or at or below, each of <code>values</code>, and <code>NA</code> where there is 
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p><code>roar_rank()</code> and <code>roar_count()</code> doubles, <code>roar_select()</code>,
 <code>roar_next()</code> and <code>roar_prev()</code> doubles as long as their second
-argument, <code>roar_contains_range()</code> a single logical.</p>
+argument (decimal text for a <code>zuroar64</code>), <code>roar_contains_range()</code> a
+single logical.</p>
     </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>

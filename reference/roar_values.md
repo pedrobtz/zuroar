@@ -9,7 +9,7 @@ bitmap.
 ## Usage
 
 ``` r
-roar_values(x, from = 0, n, type = c("double", "integer"))
+roar_values(x, from = 0, n, type = c("double", "integer", "character"))
 ```
 
 ## Arguments
@@ -28,8 +28,10 @@ roar_values(x, from = 0, n, type = c("double", "integer"))
 
 - type:
 
-  `"double"`, the default, or `"integer"`, which is an error when a
-  returned value is above `.Machine$integer.max`.
+  `"double"`, the default for a `zuroar`, or `"integer"`, which is an
+  error when a returned value is above `.Machine$integer.max`. For a
+  `zuroar64`, `"character"`, the default, gives decimal text; `"double"`
+  is an error at or above 2^53.
 
 ## Value
 

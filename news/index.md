@@ -104,3 +104,14 @@
   [`roar_serial_config()`](https://pedrobtz.github.io/zuroar/reference/roar_serial_config.md)
   configures `mirai` daemons for the 64-bit class to come; 32-bit
   bitmaps need no configuration.
+
+- [`roar64()`](https://pedrobtz.github.io/zuroar/reference/roar64.md)
+  and
+  [`roar64_range()`](https://pedrobtz.github.io/zuroar/reference/roar64.md)
+  build a `zuroar64`, a bitmap of values up to 2^64 - 1 that crosses
+  into R as decimal text or doubles below 2^53. It has the 32-bit API;
+  [`roar64_length()`](https://pedrobtz.github.io/zuroar/reference/roar64_length.md)
+  gives its exact size and
+  [`roar64_unserialize()`](https://pedrobtz.github.io/zuroar/reference/roar_serialize.md)
+  reads its portable bytes. Every change to a `zuroar64` copies it,
+  since CRoaring’s 64-bit bitmaps have no copy-on-write.

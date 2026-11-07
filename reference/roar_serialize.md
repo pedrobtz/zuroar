@@ -2,7 +2,10 @@
 
 `roar_serialize()` writes `x` in the portable Roaring format, the one
 that the C, C++, Java, Go, Rust and Python implementations share, as a
-raw vector. `roar_unserialize()` reads such bytes back into a bitmap.
+raw vector. `roar_unserialize()` reads such bytes back into a 32-bit
+bitmap and `roar64_unserialize()` into a `zuroar64`. The two formats
+share no marker that tells them apart, so the caller chooses the reader;
+it is never guessed from the bytes.
 
 ## Usage
 
@@ -10,6 +13,8 @@ raw vector. `roar_unserialize()` reads such bytes back into a bitmap.
 roar_serialize(x, optimize = FALSE)
 
 roar_unserialize(bytes, trailing = c("error", "ignore"))
+
+roar64_unserialize(bytes, trailing = c("error", "ignore"))
 ```
 
 ## Arguments
@@ -25,7 +30,8 @@ roar_unserialize(bytes, trailing = c("error", "ignore"))
 
 - bytes:
 
-  A raw vector holding a portable 32-bit bitmap.
+  A raw vector holding a portable bitmap: 32-bit for
+  `roar_unserialize()`, 64-bit for `roar64_unserialize()`.
 
 - trailing:
 
@@ -34,7 +40,8 @@ roar_unserialize(bytes, trailing = c("error", "ignore"))
 
 ## Value
 
-`roar_serialize()` a raw vector, `roar_unserialize()` a bitmap.
+`roar_serialize()` a raw vector, `roar_unserialize()` a `zuroar` and
+`roar64_unserialize()` a `zuroar64`.
 
 ## Details
 

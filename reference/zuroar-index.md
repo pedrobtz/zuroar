@@ -38,6 +38,33 @@ x[i, ...] <- value
 
 # S3 method for class 'zuroar'
 x[[i, ...]] <- value
+
+# S3 method for class 'zuroar64'
+x[i, ...]
+
+# S3 method for class 'zuroar64'
+x[[k, ...]]
+
+# S3 method for class 'zuroar64'
+head(x, n = 6L, ...)
+
+# S3 method for class 'zuroar64'
+tail(x, n = 6L, ...)
+
+# S3 method for class 'zuroar64'
+sort(x, decreasing = FALSE, ...)
+
+# S3 method for class 'zuroar64'
+unique(x, incomparables = FALSE, ...)
+
+# S3 method for class 'zuroar64'
+rev(x)
+
+# S3 method for class 'zuroar64'
+x[i, ...] <- value
+
+# S3 method for class 'zuroar64'
+x[[i, ...]] <- value
 ```
 
 ## Arguments

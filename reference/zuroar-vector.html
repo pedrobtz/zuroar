@@ -4,26 +4,26 @@ to R: length() is the number of values, an integer, or a double above
 .Machine$integer.max, as for a long vector; x[[k]] is the k-th
 smallest value; x[i] is a bitmap of the values at positions i;
 head() and tail() return bitmaps; v %in% x and match(v, x) work
-by visiting every value, so roar_contains() is the fast membership
-test. sum() adds the values in one pass. min(), max() and
+by expanding x into a double vector first, so roar_contains() is
+the fast membership test. sum() adds the values in one pass. min(), max() and
 range() read the ends without expanding the bitmap; an empty bitmap
 has none, so they are errors there. as.double() returns every value
 exactly. as.integer() does too, and is an error when a value is above
 .Machine$integer.max, rather than giving NA. A bitmap can be a
 data-frame column, and survives saveRDS(), serialize() and a trip to
-another R process on its own."><meta property="og:description" content="A bitmap behaves like sort(unique(v)) kept compressed. It is a vector
+another R process on its own. as.character() gives decimal text."><meta property="og:description" content="A bitmap behaves like sort(unique(v)) kept compressed. It is a vector
 to R: length() is the number of values, an integer, or a double above
 .Machine$integer.max, as for a long vector; x[[k]] is the k-th
 smallest value; x[i] is a bitmap of the values at positions i;
 head() and tail() return bitmaps; v %in% x and match(v, x) work
-by visiting every value, so roar_contains() is the fast membership
-test. sum() adds the values in one pass. min(), max() and
+by expanding x into a double vector first, so roar_contains() is
+the fast membership test. sum() adds the values in one pass. min(), max() and
 range() read the ends without expanding the bitmap; an empty bitmap
 has none, so they are errors there. as.double() returns every value
 exactly. as.integer() does too, and is an error when a value is above
 .Machine$integer.max, rather than giving NA. A bitmap can be a
 data-frame column, and survives saveRDS(), serialize() and a trip to
-another R process on its own."></head><body>
+another R process on its own. as.character() gives decimal text."></head><body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
 
 
@@ -54,7 +54,7 @@ another R process on its own."></head><body>
   <main id="main" class="col-md-9"><div class="page-header">
 
       <h1>A bitmap as a sorted vector</h1>
-      <small class="dont-index">Source: <a href="https://github.com/pedrobtz/zuroar/blob/main/R/methods.R" class="external-link"><code>R/methods.R</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/pedrobtz/zuroar/blob/main/R/methods.R" class="external-link"><code>R/methods.R</code></a>, <a href="https://github.com/pedrobtz/zuroar/blob/main/R/wide.R" class="external-link"><code>R/wide.R</code></a></small>
       <div class="d-none name"><code>zuroar-vector.Rd</code></div>
     </div>
 
@@ -64,14 +64,14 @@ to R: <code><a href="https://rdrr.io/r/base/length.html" class="external-link">l
 <code>.Machine$integer.max</code>, as for a long vector; <code>x[[k]]</code> is the <code>k</code>-th
 smallest value; <code>x[i]</code> is a bitmap of the values at positions <code>i</code>;
 <code><a href="https://rdrr.io/r/utils/head.html" class="external-link">head()</a></code> and <code><a href="https://rdrr.io/r/utils/head.html" class="external-link">tail()</a></code> return bitmaps; <code>v %in% x</code> and <code>match(v, x)</code> work
-by visiting every value, so <code><a href="roar_contains.html">roar_contains()</a></code> is the fast membership
-test. <code><a href="https://rdrr.io/r/base/sum.html" class="external-link">sum()</a></code> adds the values in one pass. <code><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">min()</a></code>, <code><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">max()</a></code> and
+by expanding <code>x</code> into a double vector first, so <code><a href="roar_contains.html">roar_contains()</a></code> is
+the fast membership test. <code><a href="https://rdrr.io/r/base/sum.html" class="external-link">sum()</a></code> adds the values in one pass. <code><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">min()</a></code>, <code><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">max()</a></code> and
 <code><a href="https://rdrr.io/r/base/range.html" class="external-link">range()</a></code> read the ends without expanding the bitmap; an empty bitmap
 has none, so they are errors there. <code><a href="https://rdrr.io/r/base/double.html" class="external-link">as.double()</a></code> returns every value
 exactly. <code><a href="https://rdrr.io/r/base/integer.html" class="external-link">as.integer()</a></code> does too, and is an error when a value is above
 <code>.Machine$integer.max</code>, rather than giving <code>NA</code>. A bitmap can be a
 data-frame column, and survives <code><a href="https://rdrr.io/r/base/readRDS.html" class="external-link">saveRDS()</a></code>, <code><a href="https://rdrr.io/r/base/serialize.html" class="external-link">serialize()</a></code> and a trip to
-another R process on its own.</p>
+another R process on its own. <code><a href="https://rdrr.io/r/base/character.html" class="external-link">as.character()</a></code> gives decimal text.</p>
     </div>
 
     <div class="section level2">
@@ -86,6 +86,9 @@ another R process on its own.</p>
 <span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># S3 method for class 'zuroar'</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/mtfrm.html" class="external-link">mtfrm</a></span><span class="op">(</span><span class="va">x</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># S3 method for class 'zuroar'</span></span>
 <span><span class="fu">Summary</span><span class="op">(</span><span class="va">...</span>, na.rm <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># S3 method for class 'zuroar'</span></span>
@@ -95,12 +98,39 @@ another R process on its own.</p>
 <span><span class="fu"><a href="https://rdrr.io/r/base/numeric.html" class="external-link">as.numeric</a></span><span class="op">(</span><span class="va">x</span>, <span class="va">...</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># S3 method for class 'zuroar'</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/character.html" class="external-link">as.character</a></span><span class="op">(</span><span class="va">x</span>, <span class="va">...</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># S3 method for class 'zuroar'</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/integer.html" class="external-link">as.integer</a></span><span class="op">(</span><span class="va">x</span>, <span class="va">...</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># S3 method for class 'zuroar'</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/format.html" class="external-link">format</a></span><span class="op">(</span><span class="va">x</span>, n <span class="op">=</span> <span class="fl">10</span>, <span class="va">...</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># S3 method for class 'zuroar'</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">x</span>, n <span class="op">=</span> <span class="fl">10</span>, <span class="va">...</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># S3 method for class 'zuroar64'</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">x</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># S3 method for class 'zuroar64'</span></span>
+<span><span class="fu">Summary</span><span class="op">(</span><span class="va">...</span>, na.rm <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># S3 method for class 'zuroar64'</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/character.html" class="external-link">as.character</a></span><span class="op">(</span><span class="va">x</span>, <span class="va">...</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># S3 method for class 'zuroar64'</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/double.html" class="external-link">as.double</a></span><span class="op">(</span><span class="va">x</span>, <span class="va">...</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># S3 method for class 'zuroar64'</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/numeric.html" class="external-link">as.numeric</a></span><span class="op">(</span><span class="va">x</span>, <span class="va">...</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># S3 method for class 'zuroar64'</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/integer.html" class="external-link">as.integer</a></span><span class="op">(</span><span class="va">x</span>, <span class="va">...</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># S3 method for class 'zuroar64'</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/format.html" class="external-link">format</a></span><span class="op">(</span><span class="va">x</span>, n <span class="op">=</span> <span class="fl">10</span>, <span class="va">...</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># S3 method for class 'zuroar64'</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">x</span>, n <span class="op">=</span> <span class="fl">10</span>, <span class="va">...</span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -131,14 +161,20 @@ the others, ignored or passed on.</p></dd>
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
-    <p><code>[</code> returns a bitmap. <code><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">min()</a></code> and <code><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">max()</a></code> return a single double,
+    <p><code>[</code> returns a bitmap. <code><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">min()</a></code> and <code><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">max()</a></code> return a single double (text for a
+<code>zuroar64</code>),
 <code><a href="https://rdrr.io/r/base/range.html" class="external-link">range()</a></code> two, <code><a href="https://rdrr.io/r/base/sum.html" class="external-link">sum()</a></code> one, <code><a href="https://rdrr.io/r/base/double.html" class="external-link">as.double()</a></code> and <code><a href="https://rdrr.io/r/base/integer.html" class="external-link">as.integer()</a></code> a vector,
 <code><a href="https://rdrr.io/r/base/format.html" class="external-link">format()</a></code> a string, <code><a href="https://rdrr.io/r/base/print.html" class="external-link">print()</a></code> <code>x</code>, invisibly, and <code><a href="https://rdrr.io/r/base/as.data.frame.html" class="external-link">as.data.frame()</a></code>
 a data frame with one column.</p>
     </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
-    <p>The values are read from the compressed form on demand and never
+    <p>A <code>zuroar64</code> has the same methods (see <code><a href="roar64.html">roar64()</a></code>): <code><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">min()</a></code>, <code><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">max()</a></code> and
+<code><a href="https://rdrr.io/r/base/range.html" class="external-link">range()</a></code> return decimal text, <code><a href="https://rdrr.io/r/base/double.html" class="external-link">as.double()</a></code> is an error when a value is
+at or above 2^53, and <code><a href="https://rdrr.io/r/base/length.html" class="external-link">length()</a></code> is an error above 2^53. It is an external
+pointer, not a vector, so it does not survive <code><a href="https://rdrr.io/r/base/readRDS.html" class="external-link">saveRDS()</a></code>, and <code>%in%</code>,
+<code><a href="https://rdrr.io/r/base/match.html" class="external-link">match()</a></code>, <code><a href="https://rdrr.io/r/base/sum.html" class="external-link">sum()</a></code> and data-frame columns are not available for it.</p>
+<p>The values are read from the compressed form on demand and never
 expanded behind your back: an operation that needs them as a plain
 vector, such as <code>x[1] &lt;- 5</code>, <code>identical(x, y)</code> or <code>cumsum(x)</code>, is a
 <code>zuroar_error_unsupported</code> error. Compare bitmaps as sets with <code>==</code>,

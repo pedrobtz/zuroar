@@ -18,7 +18,8 @@ roar_contains(x, values)
 
 - values:
 
-  Whole numbers from 0 to 2^32 - 1.
+  Whole numbers from 0 to 2^32 - 1; for a `zuroar64`, decimal text or
+  doubles below 2^53.
 
 ## Value
 

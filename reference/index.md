@@ -3,10 +3,16 @@
 ## All functions
 
 - [`c(`*`<zuroar>`*`)`](https://pedrobtz.github.io/zuroar/reference/c.zuroar.md)
+  [`c(`*`<zuroar64>`*`)`](https://pedrobtz.github.io/zuroar/reference/c.zuroar.md)
   : Combine bitmaps
 - [`roar()`](https://pedrobtz.github.io/zuroar/reference/roar.md)
   [`roar_range()`](https://pedrobtz.github.io/zuroar/reference/roar.md)
   : Build a bitmap
+- [`roar64()`](https://pedrobtz.github.io/zuroar/reference/roar64.md)
+  [`roar64_range()`](https://pedrobtz.github.io/zuroar/reference/roar64.md)
+  : Build a 64-bit bitmap
+- [`roar64_length()`](https://pedrobtz.github.io/zuroar/reference/roar64_length.md)
+  : The exact size of a 64-bit bitmap
 - [`roar_add()`](https://pedrobtz.github.io/zuroar/reference/roar_add.md)
   [`roar_remove()`](https://pedrobtz.github.io/zuroar/reference/roar_add.md)
   : Add or remove values
@@ -32,6 +38,7 @@
   : Send bitmaps to mirai workers
 - [`roar_serialize()`](https://pedrobtz.github.io/zuroar/reference/roar_serialize.md)
   [`roar_unserialize()`](https://pedrobtz.github.io/zuroar/reference/roar_serialize.md)
+  [`roar64_unserialize()`](https://pedrobtz.github.io/zuroar/reference/roar_serialize.md)
   : Serialise a bitmap
 - [`roar_shift()`](https://pedrobtz.github.io/zuroar/reference/roar_shift.md)
   : Shift every value
@@ -52,16 +59,36 @@
   [`rev(`*`<zuroar>`*`)`](https://pedrobtz.github.io/zuroar/reference/zuroar-index.md)
   [`` `[<-`( ``*`<zuroar>`*`)`](https://pedrobtz.github.io/zuroar/reference/zuroar-index.md)
   [`` `[[<-`( ``*`<zuroar>`*`)`](https://pedrobtz.github.io/zuroar/reference/zuroar-index.md)
+  [`` `[`( ``*`<zuroar64>`*`)`](https://pedrobtz.github.io/zuroar/reference/zuroar-index.md)
+  [`` `[[`( ``*`<zuroar64>`*`)`](https://pedrobtz.github.io/zuroar/reference/zuroar-index.md)
+  [`head(`*`<zuroar64>`*`)`](https://pedrobtz.github.io/zuroar/reference/zuroar-index.md)
+  [`tail(`*`<zuroar64>`*`)`](https://pedrobtz.github.io/zuroar/reference/zuroar-index.md)
+  [`sort(`*`<zuroar64>`*`)`](https://pedrobtz.github.io/zuroar/reference/zuroar-index.md)
+  [`unique(`*`<zuroar64>`*`)`](https://pedrobtz.github.io/zuroar/reference/zuroar-index.md)
+  [`rev(`*`<zuroar64>`*`)`](https://pedrobtz.github.io/zuroar/reference/zuroar-index.md)
+  [`` `[<-`( ``*`<zuroar64>`*`)`](https://pedrobtz.github.io/zuroar/reference/zuroar-index.md)
+  [`` `[[<-`( ``*`<zuroar64>`*`)`](https://pedrobtz.github.io/zuroar/reference/zuroar-index.md)
   : Positions in a bitmap
 - [`Ops(`*`<zuroar>`*`)`](https://pedrobtz.github.io/zuroar/reference/zuroar-ops.md)
+  [`Ops(`*`<zuroar64>`*`)`](https://pedrobtz.github.io/zuroar/reference/zuroar-ops.md)
   : Operators on bitmaps
 - [`as.data.frame(`*`<zuroar>`*`)`](https://pedrobtz.github.io/zuroar/reference/zuroar-vector.md)
+  [`mtfrm(`*`<zuroar>`*`)`](https://pedrobtz.github.io/zuroar/reference/zuroar-vector.md)
   [`Summary(`*`<zuroar>`*`)`](https://pedrobtz.github.io/zuroar/reference/zuroar-vector.md)
   [`as.double(`*`<zuroar>`*`)`](https://pedrobtz.github.io/zuroar/reference/zuroar-vector.md)
   [`as.numeric(`*`<zuroar>`*`)`](https://pedrobtz.github.io/zuroar/reference/zuroar-vector.md)
+  [`as.character(`*`<zuroar>`*`)`](https://pedrobtz.github.io/zuroar/reference/zuroar-vector.md)
   [`as.integer(`*`<zuroar>`*`)`](https://pedrobtz.github.io/zuroar/reference/zuroar-vector.md)
   [`format(`*`<zuroar>`*`)`](https://pedrobtz.github.io/zuroar/reference/zuroar-vector.md)
   [`print(`*`<zuroar>`*`)`](https://pedrobtz.github.io/zuroar/reference/zuroar-vector.md)
+  [`length(`*`<zuroar64>`*`)`](https://pedrobtz.github.io/zuroar/reference/zuroar-vector.md)
+  [`Summary(`*`<zuroar64>`*`)`](https://pedrobtz.github.io/zuroar/reference/zuroar-vector.md)
+  [`as.character(`*`<zuroar64>`*`)`](https://pedrobtz.github.io/zuroar/reference/zuroar-vector.md)
+  [`as.double(`*`<zuroar64>`*`)`](https://pedrobtz.github.io/zuroar/reference/zuroar-vector.md)
+  [`as.numeric(`*`<zuroar64>`*`)`](https://pedrobtz.github.io/zuroar/reference/zuroar-vector.md)
+  [`as.integer(`*`<zuroar64>`*`)`](https://pedrobtz.github.io/zuroar/reference/zuroar-vector.md)
+  [`format(`*`<zuroar64>`*`)`](https://pedrobtz.github.io/zuroar/reference/zuroar-vector.md)
+  [`print(`*`<zuroar64>`*`)`](https://pedrobtz.github.io/zuroar/reference/zuroar-vector.md)
   : A bitmap as a sorted vector
 - [`zuroar_info()`](https://pedrobtz.github.io/zuroar/reference/zuroar_info.md)
   : What zuroar was built with

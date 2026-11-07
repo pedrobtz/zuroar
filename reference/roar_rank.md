@@ -31,7 +31,8 @@ roar_contains_range(x, from, to)
 
 - values:
 
-  Whole numbers from 0 to 2^32 - 1.
+  Whole numbers from 0 to 2^32 - 1; for a `zuroar64`, decimal text or
+  doubles below 2^53.
 
 - k:
 
@@ -44,8 +45,8 @@ roar_contains_range(x, from, to)
 ## Value
 
 `roar_rank()` and `roar_count()` doubles, `roar_select()`, `roar_next()`
-and `roar_prev()` doubles as long as their second argument,
-`roar_contains_range()` a single logical.
+and `roar_prev()` doubles as long as their second argument (decimal text
+for a `zuroar64`), `roar_contains_range()` a single logical.
 
 ## Details
 

@@ -151,6 +151,11 @@ Grows as stages land; see `.agents/design.md` §4.
   [`roar_unserialize()`](https://pedrobtz.github.io/zuroar/reference/roar_serialize.md)
   and
   [`roar_serial_config()`](https://pedrobtz.github.io/zuroar/reference/roar_serial_config.md).
+- `src/zro_bitmap64.c`, `R/wide.R`: the `zuroar64` class on `roaring64`,
+  with its own shell, null check and value parser (canonical decimal
+  text, or doubles below 2^53). Generic R functions branch on `is64(x)`;
+  `check_same()` rejects mixing the widths. `roaring64` iterators are
+  heap objects, freed before any R allocation.
 - `src/zro_info.c`, `R/info.R`:
   [`zuroar_info()`](https://pedrobtz.github.io/zuroar/reference/zuroar_info.md).
 - `src/zro_selftest.c`: an unexported oracle hook,
@@ -192,6 +197,15 @@ one when a stage establishes it.
   through package functions (`R/hooks.R`), because rcnst compares
   uncompiled [`.Call()`](https://rdrr.io/r/base/CallExternal.html)
   arguments with [`identical()`](https://rdrr.io/r/base/identical.html).
+- **[`match()`](https://rdrr.io/r/base/match.html) and `%in%` go through
+  [`mtfrm()`](https://rdrr.io/r/base/mtfrm.html), not ALTREP.** Base R
+  converts a classed table with
+  [`mtfrm()`](https://rdrr.io/r/base/mtfrm.html), default
+  [`as.character()`](https://rdrr.io/r/base/character.html).
+  [`mtfrm.zuroar()`](https://pedrobtz.github.io/zuroar/reference/zuroar-vector.md)
+  returns doubles; without it, an exact
+  [`as.character()`](https://rdrr.io/r/base/character.html) method makes
+  `match(200000, x)` miss.
 - **An attached bitmap is never modified.** `zro_attach()` is the last
   write; every binding builds a new bitmap (D4). The read cursor in
   `zro_bitmap_t` holds a CRoaring iterator into the containers, and
@@ -224,6 +238,9 @@ one when a stage establishes it.
   shift out of the domain), the result is an error, not a conversion to
   a plain vector or a dropped value (D11, D12).
 - **No `Imports`.** A runtime dependency needs a design decision first.
+- **A `zuroar64` range that adds more than 2^40 values is refused.**
+  `roaring64` needs a container per 2^16 values; without the guard a
+  large range kills the R process for memory (design §6.1).
 - **CRoaring ignores the offset header** when reading portable bytes; a
   corrupted offset reads the right set, not an error (design §8).
 - **Comments must not name the unsafe deserialiser with parentheses.**

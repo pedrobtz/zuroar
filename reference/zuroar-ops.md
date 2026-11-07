@@ -10,6 +10,9 @@ the reverse; each returns a single `TRUE` or `FALSE`.
 ``` r
 # S3 method for class 'zuroar'
 Ops(e1, e2)
+
+# S3 method for class 'zuroar64'
+Ops(e1, e2)
 ```
 
 ## Arguments

@@ -110,5 +110,6 @@ mirai::daemons(2, serial = roar_serial_config())
 ## Next
 
 The reference index documents every function, including the 64-bit
-class, `roar64()`. An article with benchmarks against base R and the bit
-package is planned.
+class,
+[`roar64()`](https://pedrobtz.github.io/zuroar/reference/roar64.md). An
+article with benchmarks against base R and the bit package is planned.
