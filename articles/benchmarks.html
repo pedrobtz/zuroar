@@ -191,39 +191,39 @@ sizes.</p>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu">run</span><span class="op">(</span><span class="st">"dense"</span><span class="op">)</span></span>
 <span><span class="co">#&gt;     set        expression median_ms mem_alloc</span></span>
-<span><span class="co">#&gt; 1 dense       union: base   993.775  411.34MB</span></span>
-<span><span class="co">#&gt; 2 dense        union: bit     0.425    1.29MB</span></span>
-<span><span class="co">#&gt; 3 dense     union: zuroar     0.662   51.13KB</span></span>
-<span><span class="co">#&gt; 4 dense   intersect: base   906.895  392.28MB</span></span>
-<span><span class="co">#&gt; 5 dense    intersect: bit     0.417    1.22MB</span></span>
-<span><span class="co">#&gt; 6 dense intersect: zuroar     0.182        0B</span></span>
-<span><span class="co">#&gt; 7 dense      member: base   234.686   83.19MB</span></span>
-<span><span class="co">#&gt; 8 dense       member: bit     0.053  129.62KB</span></span>
-<span><span class="co">#&gt; 9 dense    member: zuroar     0.335   78.23KB</span></span></code></pre></div>
+<span><span class="co">#&gt; 1 dense       union: base   747.778  411.34MB</span></span>
+<span><span class="co">#&gt; 2 dense        union: bit     0.216    1.29MB</span></span>
+<span><span class="co">#&gt; 3 dense     union: zuroar     0.444   51.13KB</span></span>
+<span><span class="co">#&gt; 4 dense   intersect: base   697.803  392.28MB</span></span>
+<span><span class="co">#&gt; 5 dense    intersect: bit     0.216    1.22MB</span></span>
+<span><span class="co">#&gt; 6 dense intersect: zuroar     0.101        0B</span></span>
+<span><span class="co">#&gt; 7 dense      member: base   184.473   83.19MB</span></span>
+<span><span class="co">#&gt; 8 dense       member: bit     0.033  129.62KB</span></span>
+<span><span class="co">#&gt; 9 dense    member: zuroar     0.220   78.23KB</span></span></code></pre></div>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu">run</span><span class="op">(</span><span class="st">"sparse"</span><span class="op">)</span></span>
 <span><span class="co">#&gt;      set        expression median_ms mem_alloc</span></span>
-<span><span class="co">#&gt; 1 sparse       union: base     0.548  892.43KB</span></span>
-<span><span class="co">#&gt; 2 sparse        union: bit     0.416    1.19MB</span></span>
-<span><span class="co">#&gt; 3 sparse     union: zuroar     0.035        0B</span></span>
-<span><span class="co">#&gt; 4 sparse   intersect: base     0.508  736.13KB</span></span>
-<span><span class="co">#&gt; 5 sparse    intersect: bit     0.417    1.19MB</span></span>
-<span><span class="co">#&gt; 6 sparse intersect: zuroar     0.018        0B</span></span>
-<span><span class="co">#&gt; 7 sparse      member: base     0.201  284.48KB</span></span>
-<span><span class="co">#&gt; 8 sparse       member: bit     0.054   78.22KB</span></span>
-<span><span class="co">#&gt; 9 sparse    member: zuroar     0.448   78.23KB</span></span></code></pre></div>
+<span><span class="co">#&gt; 1 sparse       union: base     0.296  892.43KB</span></span>
+<span><span class="co">#&gt; 2 sparse        union: bit     0.208    1.19MB</span></span>
+<span><span class="co">#&gt; 3 sparse     union: zuroar     0.029        0B</span></span>
+<span><span class="co">#&gt; 4 sparse   intersect: base     0.266  736.13KB</span></span>
+<span><span class="co">#&gt; 5 sparse    intersect: bit     0.210    1.19MB</span></span>
+<span><span class="co">#&gt; 6 sparse intersect: zuroar     0.010        0B</span></span>
+<span><span class="co">#&gt; 7 sparse      member: base     0.097  284.48KB</span></span>
+<span><span class="co">#&gt; 8 sparse       member: bit     0.033   78.22KB</span></span>
+<span><span class="co">#&gt; 9 sparse    member: zuroar     0.296   78.23KB</span></span></code></pre></div>
 <div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu">run</span><span class="op">(</span><span class="st">"runs"</span><span class="op">)</span></span>
 <span><span class="co">#&gt;    set        expression median_ms mem_alloc</span></span>
-<span><span class="co">#&gt; 1 runs       union: base   155.715  271.48MB</span></span>
-<span><span class="co">#&gt; 2 runs        union: bit     0.412    1.19MB</span></span>
-<span><span class="co">#&gt; 3 runs     union: zuroar     0.010        0B</span></span>
-<span><span class="co">#&gt; 4 runs   intersect: base   147.323  256.22MB</span></span>
-<span><span class="co">#&gt; 5 runs    intersect: bit     0.415    1.19MB</span></span>
-<span><span class="co">#&gt; 6 runs intersect: zuroar     0.009        0B</span></span>
-<span><span class="co">#&gt; 7 runs      member: base    31.954   47.37MB</span></span>
-<span><span class="co">#&gt; 8 runs       member: bit     0.052   78.22KB</span></span>
-<span><span class="co">#&gt; 9 runs    member: zuroar     0.316   78.23KB</span></span></code></pre></div>
+<span><span class="co">#&gt; 1 runs       union: base   273.346  271.48MB</span></span>
+<span><span class="co">#&gt; 2 runs        union: bit     0.212    1.19MB</span></span>
+<span><span class="co">#&gt; 3 runs     union: zuroar     0.007        0B</span></span>
+<span><span class="co">#&gt; 4 runs   intersect: base   281.089  256.22MB</span></span>
+<span><span class="co">#&gt; 5 runs    intersect: bit     0.213    1.19MB</span></span>
+<span><span class="co">#&gt; 6 runs intersect: zuroar     0.006        0B</span></span>
+<span><span class="co">#&gt; 7 runs      member: base    63.367   47.37MB</span></span>
+<span><span class="co">#&gt; 8 runs       member: bit     0.033   78.22KB</span></span>
+<span><span class="co">#&gt; 9 runs    member: zuroar     0.200   78.23KB</span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="reading-the-results">Reading the results<a class="anchor" aria-label="anchor" href="#reading-the-results"></a>
